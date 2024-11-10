@@ -83,89 +83,71 @@
     </div>
   </div>
 </template>
-
 <script>
 import { ref, onMounted, onUnmounted } from 'vue'
 import gsap from 'gsap'
-import { MotionPathPlugin } from 'gsap/MotionPathPlugin'
-
-gsap.registerPlugin(MotionPathPlugin)
 
 export default {
   name: 'CrashGame',
   setup() {
-    const gameCanvas = ref(null)
-    const airplane = ref(null)
-    const flightPath = ref(null)
     const currentMultiplier = ref(1.00)
+    const isGameActive = ref(false)
+    const airplane = ref(null)
     let flightAnimation
 
-    const startFlight = () => {
+    onMounted(() => {
+      Echo.channel('game')
+        .listen('GameStarted', (e) => {
+          startGame(e.game)
+        })
+        .listen('GameUpdated', (e) => {
+          updateGame(e.multiplier)
+        })
+        .listen('GameCrashed', (e) => {
+          crashGame(e.game)
+        })
+    })
+
+    const startGame = (game) => {
+      isGameActive.value = true
       currentMultiplier.value = 1.00
 
-      // Create dynamic path
-      const path = createFlightPath()
-
-      // Animate airplane along path
       flightAnimation = gsap.timeline()
         .to(airplane.value, {
-          duration: 30,
           motionPath: {
-            path: path,
-            autoRotate: true,
-            alignOrigin: [0.5, 0.5]
+            path: createFlightPath(),
+            autoRotate: true
           },
           ease: "power1.in",
-          onUpdate: () => {
-            currentMultiplier.value *= 1.008
-          }
+          duration: 30
         })
-        .to(airplane.value, {
-          scale: 1.5,
-          duration: 30,
-          ease: "power1.in"
-        }, 0)
+    }
+
+    const updateGame = (multiplier) => {
+      currentMultiplier.value = multiplier
+      gsap.to(airplane.value, {
+        y: -(multiplier - 1) * 100,
+        duration: 0.1
+      })
+    }
+
+    const crashGame = (game) => {
+      isGameActive.value = false
+      gsap.to(airplane.value, {
+        rotation: 720,
+        scale: 0,
+        opacity: 0,
+        duration: 1,
+        ease: "power4.in"
+      })
     }
 
     const createFlightPath = () => {
       return `M0,${gameCanvas.value.clientHeight} Q${gameCanvas.value.clientWidth/2},${gameCanvas.value.clientHeight} ${gameCanvas.value.clientWidth},0`
     }
 
-    const crashGame = () => {
-      gsap.to(airplane.value, {
-        rotation: 720,
-        scale: 0.1,
-        opacity: 0,
-        duration: 1,
-        ease: "power4.in",
-        onComplete: () => {
-          gsap.set(airplane.value, {
-            clearProps: "all"
-          })
-          setTimeout(startFlight, 2000)
-        }
-      })
-    }
-
-    onMounted(() => {
-      startFlight()
-
-      // Random crash trigger
-      const crashInterval = setInterval(() => {
-        if (Math.random() < 0.1) {
-          crashGame()
-          clearInterval(crashInterval)
-        }
-      }, 1000)
-    })
-
-    onUnmounted(() => {
-      if (flightAnimation) {
-        flightAnimation.kill()
-      }
-    })
-
-    const isGameActive = ref(false)
+    const gameCanvas = ref(null)
+    const flightPath = ref(null)
     const hasCrashed = ref(false)
     const betAmount = ref(10)
     const canCashOut = ref(false)
@@ -245,7 +227,6 @@ export default {
   }
 }
 </script>
-
 <style scoped>
 .crash-game {
   width: 100%;

@@ -16,10 +16,12 @@ window.Pusher = Pusher;
 
 window.Echo = new Echo({
     broadcaster: 'pusher',
-    key:'952468',       // Reverb key
+    key:'123456',       // Reverb key
     cluster: 'mt1',
     wsHost: '127.0.0.1', // Reverb host
     wsPort:  '6001',        // Reverb WebSocket port
-    forceTLS: false, // Set to true if using HTTPS with Reverb
+ forceTLS: false,
+    encrypted: false,
+    enabledTransports: ['ws', 'wss'],
     disableStats: true,
 });
