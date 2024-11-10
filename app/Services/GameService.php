@@ -38,10 +38,10 @@ class GameService
             'game' => $game
         ]);
 
-        Log::info('Game Started and Broadcasted', [
-            'game_id' => $game->id,
-            'crash_point' => $game->crash_point
-        ]);
+        // Log::info('Game Started and Broadcasted', [
+        //     'game_id' => $game->id,
+        //     'crash_point' => $game->crash_point
+        // ]);
 
         return $game;
     }
