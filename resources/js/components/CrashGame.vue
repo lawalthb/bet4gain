@@ -1,4 +1,5 @@
 <template>
+
   <div class="crash-game">
     <div class="game-stats">
       <div class="current-stats">
@@ -17,7 +18,15 @@
     <div class="game-canvas" ref="gameCanvas">
       <div class="flight-path" ref="flightPath"></div>
       <div class="airplane" ref="airplane">✈️</div>
-      <div class="multiplier">{{ currentMultiplier.toFixed(2) }}x</div>
+      <div class="multiplier" :class="{ 'crashed': hasCrashed }">
+        {{ currentMultiplier.toFixed(2) }}x
+      </div>
+      <div v-if="!isGameActive && !hasCrashed" class="status">
+        Starting in {{ countdown }}s
+      </div>
+      <div v-if="hasCrashed" class="crash-point">
+        Crashed at {{ crashPoint.toFixed(2) }}x
+      </div>
     </div>
 
     <div class="betting-panel">
@@ -83,6 +92,7 @@
     </div>
   </div>
 </template>
+
 <script>
 import { ref, onMounted, onUnmounted } from 'vue'
 import gsap from 'gsap'
@@ -90,40 +100,53 @@ import gsap from 'gsap'
 export default {
   name: 'CrashGame',
   setup() {
+    const gameCanvas = ref(null)
+    const airplane = ref(null)
     const currentMultiplier = ref(1.00)
     const isGameActive = ref(false)
-    const airplane = ref(null)
-    let flightAnimation
+    const hasCrashed = ref(false)
+    const crashPoint = ref(0)
+    const countdown = ref(5)
+    let flightAnimation = null
 
     onMounted(() => {
-      Echo.channel('game')
-        .listen('GameStarted', (e) => {
-          startGame(e.game)
-        })
-        .listen('GameUpdated', (e) => {
-          updateGame(e.multiplier)
-        })
-        .listen('GameCrashed', (e) => {
-          crashGame(e.game)
-        })
+        initializeWebSockets()
+        console.log('Game Started');
     })
 
-    const startGame = (game) => {
+    const initializeWebSockets = () => {
+  window.Echo.channel('game')
+      .listen('.GameStarted', (e) => {
+          console.log('Game Started:', e)
+          startGame()
+      })
+      .listen('.GameUpdated', (e) => {
+          console.log('Game Updated:', e)
+          updateMultiplier(e.multiplier)
+      })
+      .listen('.GameCrashed', (e) => {
+          console.log('Game Crashed:', e)
+          crashGame(e.game.crash_point)
+      })
+}
+
+    const startGame = () => {
       isGameActive.value = true
+      hasCrashed.value = false
       currentMultiplier.value = 1.00
 
       flightAnimation = gsap.timeline()
         .to(airplane.value, {
           motionPath: {
-            path: createFlightPath(),
-            autoRotate: true
+            path: `M0,${gameCanvas.value.clientHeight} Q${gameCanvas.value.clientWidth/2},${gameCanvas.value.clientHeight} ${gameCanvas.value.clientWidth},0`,
+            autoRotate: true,
           },
           ease: "power1.in",
           duration: 30
         })
     }
 
-    const updateGame = (multiplier) => {
+    const updateMultiplier = (multiplier) => {
       currentMultiplier.value = multiplier
       gsap.to(airplane.value, {
         y: -(multiplier - 1) * 100,
@@ -131,30 +154,48 @@ export default {
       })
     }
 
-    const crashGame = (game) => {
+    const crashGame = (finalMultiplier) => {
       isGameActive.value = false
+      hasCrashed.value = true
+      crashPoint.value = finalMultiplier
+
+      if (flightAnimation) {
+        flightAnimation.kill()
+      }
+
       gsap.to(airplane.value, {
         rotation: 720,
         scale: 0,
         opacity: 0,
         duration: 1,
-        ease: "power4.in"
+        ease: "power4.in",
+        onComplete: () => {
+          startCountdown()
+        }
       })
     }
 
-    const createFlightPath = () => {
-      return `M0,${gameCanvas.value.clientHeight} Q${gameCanvas.value.clientWidth/2},${gameCanvas.value.clientHeight} ${gameCanvas.value.clientWidth},0`
+    const startCountdown = () => {
+      countdown.value = 5
+      const timer = setInterval(() => {
+        countdown.value--
+        if (countdown.value <= 0) {
+          clearInterval(timer)
+        }
+      }, 1000)
     }
 
-    const gameCanvas = ref(null)
+    onUnmounted(() => {
+      if (flightAnimation) {
+        flightAnimation.kill()
+      }
+    })
+
     const flightPath = ref(null)
-    const hasCrashed = ref(false)
     const betAmount = ref(10)
     const canCashOut = ref(false)
     const userBalance = ref(1000)
     const hasActiveBet = ref(false)
-    const crashPoint = ref(0)
-    const countdown = ref(5)
     const previousCrashes = ref([1.98, 3.42, 1.23, 8.56, 2.34])
     const activePlayers = ref(0)
     const totalBets = ref(0)
@@ -227,6 +268,7 @@ export default {
   }
 }
 </script>
+
 <style scoped>
 .crash-game {
   width: 100%;
@@ -266,6 +308,8 @@ export default {
 
 .airplane {
   position: absolute;
+  bottom: 0;
+  left: 0;
   font-size: 24px;
   transform-origin: center;
 }
@@ -280,10 +324,29 @@ export default {
   position: absolute;
   top: 20px;
   right: 20px;
-  font-size: 32px;
+  font-size: 48px;
   color: #4CAF50;
   font-weight: bold;
   text-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+}
+
+.multiplier.crashed {
+  color: #f44336;
+}
+
+.status, .crash-point {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 32px;
+  color: white;
+  text-align: center;
+}
+
+.crash-point {
+  color: #f44336;
+  font-weight: bold;
 }
 
 .betting-panel {

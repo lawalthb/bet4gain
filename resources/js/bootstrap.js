@@ -12,16 +12,18 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 
+
+
+
 window.Pusher = Pusher;
 
 window.Echo = new Echo({
     broadcaster: 'pusher',
-    key:'123456',       // Reverb key
+    key:'87892ed076b91483ee2a',       // Reverb key
     cluster: 'mt1',
-    wsHost: '127.0.0.1', // Reverb host
-    wsPort:  '6001',        // Reverb WebSocket port
- forceTLS: false,
+   
+ forceTLS: true,
     encrypted: false,
     enabledTransports: ['ws', 'wss'],
-    disableStats: true,
+    disableStats: false,
 });
