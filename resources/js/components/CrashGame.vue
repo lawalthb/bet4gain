@@ -14,20 +14,10 @@
       </div>
     </div>
 
-    <div class="game-canvas">
-      <canvas ref="gameCanvas"></canvas>
-      <div class="game-overlay" :class="{ 'crashed': hasCrashed }">
-        <template v-if="isGameActive">
-          <div class="multiplier">{{ currentMultiplier.toFixed(2) }}x</div>
-          <div class="rocket" :style="rocketStyle">🚀</div>
-        </template>
-        <div v-else-if="hasCrashed" class="crash-text">
-          CRASHED AT {{ crashPoint.toFixed(2) }}x
-        </div>
-        <div v-else class="waiting-text">
-          Next round in {{ countdown }}s
-        </div>
-      </div>
+    <div class="game-canvas" ref="gameCanvas">
+      <div class="flight-path" ref="flightPath"></div>
+      <div class="airplane" ref="airplane">✈️</div>
+      <div class="multiplier">{{ currentMultiplier.toFixed(2) }}x</div>
     </div>
 
     <div class="betting-panel">
@@ -95,15 +85,86 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
-import { gsap } from 'gsap'
+import { ref, onMounted, onUnmounted } from 'vue'
+import gsap from 'gsap'
+import { MotionPathPlugin } from 'gsap/MotionPathPlugin'
+
+gsap.registerPlugin(MotionPathPlugin)
 
 export default {
   name: 'CrashGame',
   setup() {
-    // State
     const gameCanvas = ref(null)
+    const airplane = ref(null)
+    const flightPath = ref(null)
     const currentMultiplier = ref(1.00)
+    let flightAnimation
+
+    const startFlight = () => {
+      currentMultiplier.value = 1.00
+
+      // Create dynamic path
+      const path = createFlightPath()
+
+      // Animate airplane along path
+      flightAnimation = gsap.timeline()
+        .to(airplane.value, {
+          duration: 30,
+          motionPath: {
+            path: path,
+            autoRotate: true,
+            alignOrigin: [0.5, 0.5]
+          },
+          ease: "power1.in",
+          onUpdate: () => {
+            currentMultiplier.value *= 1.008
+          }
+        })
+        .to(airplane.value, {
+          scale: 1.5,
+          duration: 30,
+          ease: "power1.in"
+        }, 0)
+    }
+
+    const createFlightPath = () => {
+      return `M0,${gameCanvas.value.clientHeight} Q${gameCanvas.value.clientWidth/2},${gameCanvas.value.clientHeight} ${gameCanvas.value.clientWidth},0`
+    }
+
+    const crashGame = () => {
+      gsap.to(airplane.value, {
+        rotation: 720,
+        scale: 0.1,
+        opacity: 0,
+        duration: 1,
+        ease: "power4.in",
+        onComplete: () => {
+          gsap.set(airplane.value, {
+            clearProps: "all"
+          })
+          setTimeout(startFlight, 2000)
+        }
+      })
+    }
+
+    onMounted(() => {
+      startFlight()
+
+      // Random crash trigger
+      const crashInterval = setInterval(() => {
+        if (Math.random() < 0.1) {
+          crashGame()
+          clearInterval(crashInterval)
+        }
+      }, 1000)
+    })
+
+    onUnmounted(() => {
+      if (flightAnimation) {
+        flightAnimation.kill()
+      }
+    })
+
     const isGameActive = ref(false)
     const hasCrashed = ref(false)
     const betAmount = ref(10)
@@ -117,54 +178,6 @@ export default {
     const totalBets = ref(0)
     const autoEnabled = ref(false)
     const autoCashoutPoint = ref(2.00)
-
-    // Animation
-    let gameLoop
-    let multiplierInterval
-
-    const rocketStyle = computed(() => ({
-      transform: `translateY(-${(currentMultiplier.value - 1) * 50}px) rotate(45deg)`
-    }))
-
-    // Game Logic
-    const startGame = () => {
-      isGameActive.value = true
-      hasCrashed.value = false
-      currentMultiplier.value = 1.00
-
-      multiplierInterval = setInterval(() => {
-        currentMultiplier.value *= 1.01
-
-        if (autoEnabled.value && currentMultiplier.value >= autoCashoutPoint.value) {
-          cashOut()
-        }
-      }, 100)
-    }
-
-    const endGame = (crashMultiplier) => {
-      clearInterval(multiplierInterval)
-      crashPoint.value = crashMultiplier
-      isGameActive.value = false
-      hasCrashed.value = true
-      canCashOut.value = false
-      hasActiveBet.value = false
-
-      previousCrashes.value.unshift(crashMultiplier)
-      previousCrashes.value = previousCrashes.value.slice(0, 10)
-
-      startCountdown()
-    }
-
-    const startCountdown = () => {
-      countdown.value = 5
-      const timer = setInterval(() => {
-        countdown.value--
-        if (countdown.value <= 0) {
-          clearInterval(timer)
-          startGame()
-        }
-      }, 1000)
-    }
 
     const placeBet = () => {
       if (betAmount.value <= userBalance.value) {
@@ -204,16 +217,10 @@ export default {
       betAmount.value = userBalance.value
     }
 
-    onMounted(() => {
-      startCountdown()
-    })
-
-    onUnmounted(() => {
-      clearInterval(multiplierInterval)
-    })
-
     return {
       gameCanvas,
+      airplane,
+      flightPath,
       currentMultiplier,
       isGameActive,
       hasCrashed,
@@ -228,7 +235,6 @@ export default {
       totalBets,
       autoEnabled,
       autoCashoutPoint,
-      rocketStyle,
       placeBet,
       cashOut,
       quickBet,
@@ -273,39 +279,30 @@ export default {
   position: relative;
   width: 100%;
   height: 400px;
-  background: #000;
-  border-radius: 8px;
+  background: linear-gradient(to bottom, #1a1a2e, #16213e);
   overflow: hidden;
 }
 
-.game-overlay {
+.airplane {
   position: absolute;
-  top: 0;
-  left: 0;
+  font-size: 24px;
+  transform-origin: center;
+}
+
+.flight-path {
+  position: absolute;
   width: 100%;
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
 }
 
 .multiplier {
-  font-size: 48px;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  font-size: 32px;
   color: #4CAF50;
   font-weight: bold;
   text-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
-}
-
-.rocket {
-  font-size: 40px;
-  transition: transform 0.1s ease-out;
-}
-
-.crash-text {
-  font-size: 36px;
-  color: #f44336;
-  font-weight: bold;
 }
 
 .betting-panel {
