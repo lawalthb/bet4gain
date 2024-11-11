@@ -5,10 +5,12 @@ window.Pusher = Pusher;
 
 window.Echo = new Echo({
     broadcaster: 'pusher',
-    key: '87892ed076b91483ee2a',
+    key: '123456',
+    wsHost: '127.0.0.1',
     cluster: 'mt1',
-    wsPort: 6001 ?? 80,
-    wssPort: 6001 ?? 443,
-    forceTLS: ('http' ?? 'https') === 'https',
+    wsPort: 6001,
+    forceTLS: false,
+    encrypted: false,
     enabledTransports: ['ws', 'wss'],
+    disableStats: true,
 });

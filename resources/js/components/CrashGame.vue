@@ -99,37 +99,41 @@ import gsap from 'gsap'
 
 export default {
   name: 'CrashGame',
-  setup() {
-    const gameCanvas = ref(null)
-    const airplane = ref(null)
-    const currentMultiplier = ref(1.00)
-    const isGameActive = ref(false)
-    const hasCrashed = ref(false)
-    const crashPoint = ref(0)
-    const countdown = ref(5)
-    let flightAnimation = null
+    setup() {
+        const gameCanvas = ref(null)
+        const airplane = ref(null)
+        const currentMultiplier = ref(1.00)
+        const isGameActive = ref(false)
+        const hasCrashed = ref(false)
+        const crashPoint = ref(0)
+        const countdown = ref(5)
+        let flightAnimation = null
+    
+  onMounted(() => {
+      console.log('Initializing WebSocket connection...');
 
-    onMounted(() => {
-        initializeWebSockets()
-        console.log('Game Started');
-    })
+      window.Echo.connector.pusher.connection.bind('connected', () => {
+          console.log('✅ WebSocket Connected!');
+      });
 
-    const initializeWebSockets = () => {
-  window.Echo.channel('game')
-      .listen('.GameStarted', (e) => {
-          console.log('Game Started:', e)
-          startGame()
-      })
-      .listen('.GameUpdated', (e) => {
-          console.log('Game Updated:', e)
-          updateMultiplier(e.multiplier)
-      })
-      .listen('.GameCrashed', (e) => {
-          console.log('Game Crashed:', e)
-          crashGame(e.game.crash_point)
-      })
-}
+      window.Echo.connector.pusher.connection.bind('disconnected', () => {
+          console.log('❌ WebSocket Disconnected');
+      });
 
+      window.Echo.channel('game')
+          .listen('.GameStarted', (e) => {
+              console.log('🎮 Game Started:', e);
+              startGame();
+          })
+          .listen('.GameUpdated', (e) => {
+              console.log('📈 Game Updated:', e);
+              updateMultiplier(e.multiplier);
+          })
+          .listen('.GameCrashed', (e) => {
+              console.log('💥 Game Crashed:', e);
+              crashGame(e.game.crash_point);
+          });
+  });
     const startGame = () => {
       isGameActive.value = true
       hasCrashed.value = false

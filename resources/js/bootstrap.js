@@ -12,18 +12,28 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 
-
-
-
 window.Pusher = Pusher;
 
 window.Echo = new Echo({
     broadcaster: 'pusher',
-    key:'87892ed076b91483ee2a',       // Reverb key
-    cluster: 'mt1',
-   
- forceTLS: true,
+    key: '123456',
+    wsHost: '127.0.0.1',
+       cluster: 'mt1',
+    wsPort: 6001,
+    wssPort: 6001,
+    forceTLS: false,
     encrypted: false,
-    enabledTransports: ['ws', 'wss'],
-    disableStats: false,
-});
+    enabledTransports: ['ws'],
+    disableStats: true,
+    auth: {
+        headers: {
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+        }
+    }
+});/**
+ * Echo exposes an expressive API for subscribing to channels and listening
+ * for events that are broadcast by Laravel. Echo and event broadcasting
+ * allow your team to quickly build robust real-time web applications.
+ */
+
+import './echo';
