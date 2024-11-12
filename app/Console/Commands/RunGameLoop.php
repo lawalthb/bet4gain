@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Services\GameService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Event;
 
 class RunGameLoop extends Command
 {
@@ -24,10 +25,12 @@ class RunGameLoop extends Command
         Log::info('Game Loop Started');
 
         while (true) {
+            broadcast(new \App\Events\TestEvent('Hello from Reverb!'));
             $this->info('Starting new game...');
             Log::info('New Game Round Starting');
 
             $game = $this->gameService->startNewGame();
+            Event::dispatch('game.started', $game);
 
             while (!$game->is_completed) {
                 $this->gameService->updateGameState($game);

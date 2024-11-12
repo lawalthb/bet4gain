@@ -16,11 +16,11 @@ window.Pusher = Pusher;
 
 window.Echo = new Echo({
     broadcaster: 'pusher',
-    key: '123456',
-    wsHost: '127.0.0.1',
+    key: '87892ed076b91483ee2a',
+    wsHost: '',
        cluster: 'mt1',
-    wsPort: 6001,
-    wssPort: 6001,
+    //wsPort: 6001,
+    //wssPort: 6001,
     forceTLS: false,
     encrypted: false,
     enabledTransports: ['ws'],

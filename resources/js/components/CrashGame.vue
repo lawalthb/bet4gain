@@ -96,6 +96,7 @@
 <script>
 import { ref, onMounted, onUnmounted } from 'vue'
 import gsap from 'gsap'
+import Pusher from 'pusher-js'
 
 export default {
   name: 'CrashGame',
@@ -108,32 +109,96 @@ export default {
         const crashPoint = ref(0)
         const countdown = ref(5)
         let flightAnimation = null
-    
-  onMounted(() => {
-      console.log('Initializing WebSocket connection...');
+         let pusher = null
+    let channel = null
+        onMounted(() => {
+ pusher = new Pusher('87892ed076b91483ee2a', {
+        cluster: 'mt1',
+        forceTLS: false,
+        enabledTransports: ['ws', 'wss']
+      })
 
-      window.Echo.connector.pusher.connection.bind('connected', () => {
-          console.log('✅ WebSocket Connected!');
-      });
+      // Subscribe to channel
+      channel = pusher.subscribe('game')
 
-      window.Echo.connector.pusher.connection.bind('disconnected', () => {
-          console.log('❌ WebSocket Disconnected');
-      });
+        // Debug connection status
+      pusher.connection.bind('connected', () => {
+        console.log('Connected to Pusher')
+      })
 
-      window.Echo.channel('game')
-          .listen('.GameStarted', (e) => {
-              console.log('🎮 Game Started:', e);
-              startGame();
-          })
-          .listen('.GameUpdated', (e) => {
-              console.log('📈 Game Updated:', e);
-              updateMultiplier(e.multiplier);
-          })
-          .listen('.GameCrashed', (e) => {
-              console.log('💥 Game Crashed:', e);
-              crashGame(e.game.crash_point);
-          });
-  });
+      pusher.connection.bind('error', (err) => {
+        console.error('Pusher Connection Error:', err)
+      })
+
+      // Bind events with proper event names (notice the dot prefix)
+            channel.bind('GameStarted', (data) => {
+         alert(data);
+        console.log('Game Started:', data)
+        startGame()
+      })
+
+            channel.bind('GameUpdated', (data) => {
+
+        console.log('📈 Game Updated:', data)
+        if (data && data.multiplier) {
+          updateMultiplier(data.multiplier)
+        }
+      })
+
+      // Add subscription debugging
+      channel.bind('pusher:subscription_succeeded', () => {
+        console.log('Successfully subscribed to game channel')
+      })
+
+      channel.bind('pusher:subscription_error', (error) => {
+        console.error('Subscription Error:', error)
+      })
+
+
+
+
+//     console.log('Initializing WebSocket connection...');
+// // In your Vue component or JavaScript file
+//     window.Echo.channel('game')
+
+//     .listen('GameStarted', (e) => {
+//         console.log('Game Started Event Received:', e);
+//     })
+//     .subscribed(() => {
+//         console.log('Subscribed to game channel');
+//     })
+//     .error((error) => {
+//         console.error('Echo error:', error);
+//     });
+
+//     window.Echo.connector.pusher.connection.bind('connected', () => {
+//         console.log('✅ WebSocket Connected!');
+//     });
+
+//     window.Echo.connector.pusher.connection.bind('disconnected', () => {
+//         console.log('❌ WebSocket Disconnected');
+//     });
+
+//     window.Echo.channel('game')
+//         .listen('GameStarted', (e) => {
+//             console.log('🎮 Game Started:', e);
+//             startGame();
+//         })
+//         .listen('GameUpdated', (e) => {
+//             console.log('📈 Game Updated:', e);
+//             updateMultiplier(e.multiplier);
+//         })
+//         .listen('GameCrashed', (e) => {
+//             console.log('💥 Game Crashed:', e);
+//             crashGame(e.game.crash_point);
+//         });
+
+//     window.Echo.channel('test-channel')
+//         .listen('TestEvent', (e) => {
+//             console.log('Test Event Received:', e);
+//             alert('Test Event Received!');
+//         });
+});
     const startGame = () => {
       isGameActive.value = true
       hasCrashed.value = false
@@ -192,6 +257,13 @@ export default {
     onUnmounted(() => {
       if (flightAnimation) {
         flightAnimation.kill()
+      }
+      if (channel) {
+        channel.unbind_all()
+        channel.unsubscribe()
+      }
+      if (pusher) {
+        pusher.disconnect()
       }
     })
 

@@ -8,9 +8,16 @@
 
     <title>Crash Game</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+    <script>
+        // Enable pusher logging - don't include this in production
+
+    </script>
 </head>
 
 <body class="bg-gray-900 text-white">
+   
     <nav class="bg-gray-800 p-4">
         <div class="container mx-auto flex justify-between items-center">
             <a href="/" class="text-xl font-bold">Crash Game</a>

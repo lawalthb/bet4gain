@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Events;
 
 use Illuminate\Broadcasting\Channel;
@@ -8,21 +7,19 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class GameStarted implements ShouldBroadcast
+class TestEvent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $game;
+    public $message;
 
-    public function __construct($game)
+    public function __construct($message)
     {
-        $this->game = $game;
+        $this->message = $message;
     }
 
     public function broadcastOn()
     {
-        return new Channel('game');
+        return new Channel('test-channel');
     }
-
-   
 }

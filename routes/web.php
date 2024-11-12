@@ -40,3 +40,28 @@ Route::get('/leaderboard', [GameController::class, 'leaderboard'])->name('leader
 Broadcast::channel('game', function ($user) {
     return ['id' => $user->id, 'name' => $user->name];
 });
+
+Route::get('/test-event', function () {
+    broadcast(new \App\Events\TestEvent('Hello from Reverb!'));
+    return 'Event sent!';
+});
+
+
+Route::get('/gamess', function () {
+    broadcast(new \App\Events\GameStarted('Hello from Reverb!'));
+    return 'Event sent from reverb!';
+});
+
+// In routes/web.php
+Route::get('/test-broadcast', function () {
+    $game = \App\Models\Game::create([
+        'started_at' => now(),
+        'crash_point' => 2.0,
+        'is_completed' => false
+    ]);
+
+    event(new \App\Events\GameStarted($game));
+
+    return "Test broadcast sent!";
+});
+
