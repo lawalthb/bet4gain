@@ -274,7 +274,8 @@ export default {
   width: 100%;
   max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
+
+  padding: 10px;
   background: #1a1a1a;
   border-radius: 12px;
   color: white;
@@ -284,6 +285,15 @@ export default {
   display: flex;
   justify-content: space-between;
   margin-bottom: 20px;
+}
+
+.previous-crashes {
+  
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  gap: 8px;
+  margin-bottom: 15px;
+  padding: 10px;
+  overflow-x: auto;
 }
 
 .previous-crashes span {
@@ -301,9 +311,11 @@ export default {
 .game-canvas {
   position: relative;
   width: 100%;
-  height: 400px;
+
+  height: 300px; /* Smaller height for mobile */
   background: linear-gradient(to bottom, #1a1a2e, #16213e);
   overflow: hidden;
+  border-radius: 8px;
 }
 
 .airplane {
@@ -350,15 +362,19 @@ export default {
 }
 
 .betting-panel {
-  margin-top: 20px;
-  padding: 20px;
+
+
+  margin-top: 15px;
+  padding: 15px;
   background: #333;
   border-radius: 8px;
 }
 
 .bet-info {
   display: flex;
-  justify-content: space-between;
+
+  flex-direction: column;
+  gap: 10px;
   margin-bottom: 15px;
 }
 
@@ -367,8 +383,11 @@ export default {
   gap: 15px;
 }
 
-.quick-amounts {
-  display: flex;
+
+
+.quick-bets {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 5px;
   margin-top: 10px;
 }
@@ -404,12 +423,38 @@ input[type="number"] {
   background: #333;
   color: white;
   border: 1px solid #555;
-  padding: 8px;
+
   border-radius: 4px;
 }
 
 button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Make buttons and inputs more touch-friendly */
+button, input {
+  min-height: 44px;
+  padding: 10px;
+}
+
+@media (min-width: 640px) {
+  .quick-bets {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .bet-info {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+}
+
+@media (min-width: 768px) {
+  .game-canvas {
+    height: 400px; /* Larger height for desktop */
+  }
+  .crash-game {
+    padding: 20px;
+  }
 }
 </style>
