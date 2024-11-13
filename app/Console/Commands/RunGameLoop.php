@@ -5,7 +5,6 @@ namespace App\Console\Commands;
 use App\Services\GameService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
-
 class RunGameLoop extends Command
 {
     protected $signature = 'game:run';
@@ -25,19 +24,21 @@ class RunGameLoop extends Command
 
         while (true) {
             $this->info('Starting new game...');
-            Log::info('New Game Round Starting');
-
             $game = $this->gameService->startNewGame();
 
             while (!$game->is_completed) {
                 $this->gameService->updateGameState($game);
-                Log::info('Game State Updated', ['game_id' => $game->id]);
-                usleep(100000); // 100ms interval
+                usleep(50000); // 50ms for smooth multiplier updates
             }
 
-            $this->info('Game crashed! Waiting for next round...');
-            Log::info('Game Round Completed', ['game_id' => $game->id]);
-            sleep(5); // Wait between games
+            $this->info('Game crashed!');
+
+            // 5 second countdown
+            for ($i = 5; $i > 0; $i--) {
+                $this->info("Next game in {$i}...");
+                sleep(1);
+            }
         }
     }
+
 }

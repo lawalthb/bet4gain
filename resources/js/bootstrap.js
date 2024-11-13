@@ -19,9 +19,9 @@ window.Pusher = Pusher;
 
 window.Echo = new Echo({
     broadcaster: 'pusher',
-    key:'87892ed076b91483ee2a',       // Reverb key
+    key:'87892ed076b91483ee2a',       
     cluster: 'mt1',
-   
+
  forceTLS: true,
     encrypted: false,
     enabledTransports: ['ws', 'wss'],

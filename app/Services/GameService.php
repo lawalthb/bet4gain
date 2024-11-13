@@ -24,70 +24,107 @@ class GameService
                 'useTLS' => true
             ]
         );
+        Log::info('GameService initialized');
     }
 
     public function startNewGame()
     {
-        $game = Game::create([
-            'started_at' => now(),
-            'crash_point' => $this->generateCrashPoint(),
-            'is_completed' => false
-        ]);
+        try {
+            $game = Game::create([
+                'started_at' => now(),
+                'crash_point' => $this->generateCrashPoint(),
+                'is_completed' => false
+            ]);
 
-        $this->pusher->trigger('game', 'GameStarted', [
-            'game' => $game
-        ]);
+            Log::info('New game started', [
+                'game_id' => $game->id,
+                'crash_point' => $game->crash_point,
+                'started_at' => $game->started_at
+            ]);
 
-        // Log::info('Game Started and Broadcasted', [
-        //     'game_id' => $game->id,
-        //     'crash_point' => $game->crash_point
-        // ]);
+            $this->pusher->trigger('game', 'GameStarted', [
+                'game' => $game
+            ]);
 
-        return $game;
+            return $game;
+        } catch (\Exception $e) {
+            Log::error('Error starting new game', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
     }
 
     public function updateGameState($game)
     {
-        $elapsedTime = now()->diffInMilliseconds($game->started_at) / 1000;
-        $currentMultiplier = $this->calculateMultiplier($elapsedTime);
+        try {
+            $elapsedTime = abs(now()->diffInMilliseconds($game->started_at) / 1000);
+            $currentMultiplier = $this->calculateMultiplier($elapsedTime);
 
-        $this->pusher->trigger('game', 'GameUpdated', [
-            'multiplier' => $currentMultiplier,
-            'elapsed_time' => $elapsedTime
-        ]);
+            Log::debug('Game state update', [
+                'game_id' => $game->id,
+                'elapsed_time' => $elapsedTime,
+                'current_multiplier' => $currentMultiplier,
+                'crash_point' => $game->crash_point
+            ]);
 
-        Log::info('Game State Updated and Broadcasted', [
-            'game_id' => $game->id,
-            'multiplier' => $currentMultiplier
-        ]);
+            $this->pusher->trigger('game', 'GameUpdated', [
+                'multiplier' => $currentMultiplier,
+                'elapsed_time' => $elapsedTime
+            ]);
 
-        if ($currentMultiplier >= $game->crash_point) {
-            $this->crashGame($game);
+            if ($currentMultiplier >= $game->crash_point) {
+                $this->crashGame($game);
+            }
+        } catch (\Exception $e) {
+            Log::error('Error updating game state', [
+                'game_id' => $game->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
         }
-    }
-
-    private function crashGame($game)
-    {
-        $game->update(['is_completed' => true]);
-
-        $this->pusher->trigger('game', 'GameCrashed', [
-            'game' => $game
-        ]);
-
-        Log::info('Game Crashed and Broadcasted', [
-            'game_id' => $game->id,
-            'final_multiplier' => $game->crash_point
-        ]);
-    }
-
-    private function generateCrashPoint()
-    {
-        $random = mt_rand() / mt_getrandmax();
-        return 0.99 / (1 - $random);
     }
 
     private function calculateMultiplier($elapsedTime)
     {
-        return pow(1.0678, $elapsedTime);
+        $multiplier = pow(1.0678, $elapsedTime * 6);
+        Log::debug('Multiplier calculated', [
+            'elapsed_time' => $elapsedTime,
+            'multiplier' => $multiplier
+        ]);
+        return $multiplier;
+    }
+
+    private function crashGame($game)
+    {
+        try {
+            $game->update(['is_completed' => true]);
+
+            Log::info('Game crashed', [
+                'game_id' => $game->id,
+                'final_crash_point' => $game->crash_point,
+                'total_duration' => now()->diffInSeconds($game->started_at)
+            ]);
+
+            $this->pusher->trigger('game', 'GameCrashed', [
+                'game' => $game
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error crashing game', [
+                'game_id' => $game->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
+    }
+
+    private function generateCrashPoint()
+    {
+        $crashPoint = mt_rand(100, 1000) / 100;
+        Log::debug('Crash point generated', ['crash_point' => $crashPoint]);
+        return $crashPoint;
     }
 }

@@ -17,7 +17,7 @@
 
     <div class="game-canvas" ref="gameCanvas">
       <div class="flight-path" ref="flightPath"></div>
-      <div class="airplane" ref="airplane">✈️</div>
+      <div class="airplane" ref="airplane"><img src="/resources/img/rocket3.png" style="height: 100px;" /> </div>
       <div class="multiplier" :class="{ 'crashed': hasCrashed }">
         {{ currentMultiplier.toFixed(2) }}x
       </div>
@@ -28,225 +28,217 @@
         Crashed at {{ crashPoint.toFixed(2) }}x
       </div>
     </div>
-
     <div class="betting-panel">
-      <div class="bet-info">
-        <div class="balance">
-          Balance: ${{ userBalance }}
-        </div>
-        <div class="potential-win" v-if="isGameActive">
-          Potential Win: ${{ (betAmount * currentMultiplier).toFixed(2) }}
-        </div>
-      </div>
+      <div class="bet-controls-container">
+        <div class="input-group">
+          <div class="amount-input">
+            <label>Amount</label>
+            <input
+              type="number"
+              v-model="betAmount"
+              :disabled="isGameActive"
+              min="1"
+              :max="userBalance"
+            />
+          </div>
 
-      <div class="betting-controls">
-        <div class="bet-amount">
-          <input
-            type="number"
-            v-model="betAmount"
-            :disabled="isGameActive"
-            min="1"
-            :max="userBalance"
-          />
-          <div class="quick-amounts">
-            <button @click="quickBet(5)">$5</button>
-            <button @click="quickBet(10)">$10</button>
-            <button @click="quickBet(50)">$50</button>
-            <button @click="betHalf">1/2</button>
-            <button @click="betDouble">2x</button>
-            <button @click="betMax">Max</button>
+          <div class="cashout-input">
+            <label>Auto Cashout</label>
+            <input
+              type="number"
+              v-model="autoCashoutPoint"
+              :disabled="!autoEnabled"
+              step="0.1"
+              min="1.1"
+            />
           </div>
         </div>
 
-        <div class="action-buttons">
-          <button
-            class="bet-button"
-            @click="placeBet"
-            :disabled="isGameActive || betAmount > userBalance"
-            v-if="!hasActiveBet">
-            Place Bet
-          </button>
-          <button
-            class="cashout-button"
-            @click="cashOut"
-            :disabled="!canCashOut"
-            v-else>
-            Cash Out ({{ (betAmount * currentMultiplier).toFixed(2) }})
-          </button>
+        <div class="quick-amounts">
+          <button @click="quickBet(5)">$5</button>
+          <button @click="quickBet(10)">$10</button>
+          <button @click="quickBet(50)">$50</button>
+          <button @click="betHalf">1/2</button>
+          <button @click="betDouble">2x</button>
+          <button @click="betMax">Max</button>
         </div>
+      </div>
+
+      <div class="action-buttons">
+        <button
+          class="bet-button"
+          @click="placeBet"
+          :disabled="isGameActive || betAmount > userBalance"
+          v-if="!hasActiveBet">
+          Place Bet
+        </button>
+        <button
+          class="cashout-button"
+          @click="cashOut"
+          :disabled="!canCashOut"
+          v-else>
+          Cash Out ({{ (betAmount * currentMultiplier).toFixed(2) }})
+        </button>
       </div>
     </div>
 
-    <div class="auto-cashout">
-      <label>
-        <input type="checkbox" v-model="autoEnabled">
-        Auto Cash Out at
-      </label>
-      <input
-        type="number"
-        v-model="autoCashoutPoint"
-        :disabled="!autoEnabled"
-        step="0.1"
-        min="1.1"
-      />x
-    </div>
+
+
+
   </div>
 </template>
-
 <script>
 import { ref, onMounted, onUnmounted } from 'vue'
 import gsap from 'gsap'
 
 export default {
-  name: 'CrashGame',
-  setup() {
-    const gameCanvas = ref(null)
-    const airplane = ref(null)
-    const currentMultiplier = ref(1.00)
-    const isGameActive = ref(false)
-    const hasCrashed = ref(false)
-    const crashPoint = ref(0)
-    const countdown = ref(5)
-    let flightAnimation = null
+name: 'CrashGame',
+setup() {
+  const gameCanvas = ref(null)
+  const airplane = ref(null)
+  const currentMultiplier = ref(1.00)
+  const isGameActive = ref(false)
+  const hasCrashed = ref(false)
+  let flightAnimation = null
 
-    onMounted(() => {
-        initializeWebSockets()
-        console.log('Game Started');
-    })
+  onMounted(() => {
+      window.Echo.channel('game')
+          .listen('.GameStarted', (e) => {
+              console.log('🎮 Game Started:', e)
+              startGame()
+          })
+          .listen('.GameUpdated', (e) => {
+              console.log('📈 Multiplier:', e.multiplier)
+              updateMultiplier(e.multiplier)
+          })
+          .listen('.GameCrashed', (e) => {
+              console.log('💥 Crashed at:', e.game.crash_point)
+              crashGame(e.game.crash_point)
+          })
+  })
 
-    const initializeWebSockets = () => {
-  window.Echo.channel('game')
-      .listen('.GameStarted', (e) => {
-          console.log('Game Started:', e)
-          startGame()
-      })
-      .listen('.GameUpdated', (e) => {
-          console.log('Game Updated:', e)
-          updateMultiplier(e.multiplier)
-      })
-      .listen('.GameCrashed', (e) => {
-          console.log('Game Crashed:', e)
-          crashGame(e.game.crash_point)
-      })
-}
-
-    const startGame = () => {
+  const startGame = () => {
       isGameActive.value = true
       hasCrashed.value = false
       currentMultiplier.value = 1.00
 
-      flightAnimation = gsap.timeline()
-        .to(airplane.value, {
-          motionPath: {
-            path: `M0,${gameCanvas.value.clientHeight} Q${gameCanvas.value.clientWidth/2},${gameCanvas.value.clientHeight} ${gameCanvas.value.clientWidth},0`,
-            autoRotate: true,
-          },
-          ease: "power1.in",
-          duration: 30
-        })
-    }
-
-    const updateMultiplier = (multiplier) => {
-      currentMultiplier.value = multiplier
-      gsap.to(airplane.value, {
-        y: -(multiplier - 1) * 100,
-        duration: 0.1
+      gsap.set(airplane.value, {
+          x: 0,
+          y: gameCanvas.value.clientHeight,
+          scale: 1,
+          opacity: 1,
+          rotation: 0
       })
-    }
 
-    const crashGame = (finalMultiplier) => {
+      flightAnimation = gsap.to(airplane.value, {
+          x: gameCanvas.value.clientWidth,
+          y: 0,
+          ease: "power1.in",
+          duration: 15
+      })
+  }
+
+  const updateMultiplier = (multiplier) => {
+      currentMultiplier.value = multiplier
+      const progress = (multiplier - 1) / 9
+      gsap.to(airplane.value, {
+          y: gameCanvas.value.clientHeight * (1 - progress),
+          duration: 0.1
+      })
+  }
+
+  const crashGame = (finalMultiplier) => {
       isGameActive.value = false
       hasCrashed.value = true
       crashPoint.value = finalMultiplier
 
-      if (flightAnimation) {
-        flightAnimation.kill()
-      }
+      if (flightAnimation) flightAnimation.kill()
 
       gsap.to(airplane.value, {
-        rotation: 720,
-        scale: 0,
-        opacity: 0,
-        duration: 1,
-        ease: "power4.in",
-        onComplete: () => {
-          startCountdown()
-        }
+          rotation: 90,
+          y: gameCanvas.value.clientHeight,
+          scale: 0.5,
+          opacity: 0,
+          duration: 0.5,
+          ease: "power2.in",
+          onComplete: startCountdown
       })
-    }
+  }
 
-    const startCountdown = () => {
-      countdown.value = 5
-      const timer = setInterval(() => {
-        countdown.value--
-        if (countdown.value <= 0) {
-          clearInterval(timer)
-        }
-      }, 1000)
-    }
-
-    onUnmounted(() => {
-      if (flightAnimation) {
-        flightAnimation.kill()
+  const startCountdown = () => {
+    countdown.value = 5
+    const timer = setInterval(() => {
+      countdown.value--
+      if (countdown.value <= 0) {
+        clearInterval(timer)
       }
-    })
+    }, 1000)
+  }
 
-    const flightPath = ref(null)
-    const betAmount = ref(10)
-    const canCashOut = ref(false)
-    const userBalance = ref(1000)
-    const hasActiveBet = ref(false)
-    const previousCrashes = ref([1.98, 3.42, 1.23, 8.56, 2.34])
-    const activePlayers = ref(0)
-    const totalBets = ref(0)
-    const autoEnabled = ref(false)
-    const autoCashoutPoint = ref(2.00)
-
-    const placeBet = () => {
-      if (betAmount.value <= userBalance.value) {
-        userBalance.value -= betAmount.value
-        hasActiveBet.value = true
-        canCashOut.value = true
-        totalBets.value += betAmount.value
-        activePlayers.value++
-      }
+  onUnmounted(() => {
+    if (flightAnimation) {
+      flightAnimation.kill()
     }
+  })
 
-    const cashOut = () => {
-      if (canCashOut.value) {
-        const winnings = betAmount.value * currentMultiplier.value
-        userBalance.value += winnings
-        canCashOut.value = false
-        hasActiveBet.value = false
-        activePlayers.value--
-      }
+  const flightPath = ref(null)
+  const betAmount = ref(10)
+  const canCashOut = ref(false)
+  const userBalance = ref(1000)
+  const hasActiveBet = ref(false)
+  const previousCrashes = ref([1.98, 3.42, 1.23, 8.56, 2.34])
+  const activePlayers = ref(0)
+  const totalBets = ref(0)
+  const autoEnabled = ref(false)
+  const autoCashoutPoint = ref(2.00)
+  const crashPoint = ref(0)
+  const countdown = ref(5)
+
+  const placeBet = () => {
+    if (betAmount.value <= userBalance.value) {
+      userBalance.value -= betAmount.value
+      hasActiveBet.value = true
+      canCashOut.value = true
+      totalBets.value += betAmount.value
+      activePlayers.value++
     }
+  }
 
-    const quickBet = (amount) => {
-      if (!isGameActive.value) {
-        betAmount.value = amount
-      }
+  const cashOut = () => {
+    if (canCashOut.value) {
+      const winnings = betAmount.value * currentMultiplier.value
+      userBalance.value += winnings
+      canCashOut.value = false
+      hasActiveBet.value = false
+      activePlayers.value--
     }
+  }
 
-    const betHalf = () => {
-      betAmount.value = Math.floor(betAmount.value / 2)
+  const quickBet = (amount) => {
+    if (!isGameActive.value) {
+      betAmount.value = amount
     }
+  }
 
-    const betDouble = () => {
-      betAmount.value = Math.min(betAmount.value * 2, userBalance.value)
-    }
+  const betHalf = () => {
+    betAmount.value = Math.floor(betAmount.value / 2)
+  }
 
-    const betMax = () => {
-      betAmount.value = userBalance.value
-    }
+  const betDouble = () => {
+    betAmount.value = Math.min(betAmount.value * 2, userBalance.value)
+  }
 
-    return {
+  const betMax = () => {
+    betAmount.value = userBalance.value
+  }
+
+  return {
       gameCanvas,
       airplane,
-      flightPath,
       currentMultiplier,
       isGameActive,
       hasCrashed,
+      flightPath,
       betAmount,
       canCashOut,
       userBalance,
@@ -264,18 +256,16 @@ export default {
       betHalf,
       betDouble,
       betMax
-    }
   }
 }
+}
 </script>
-
 <style scoped>
 .crash-game {
   width: 100%;
   max-width: 800px;
   margin: 0 auto;
-
-  padding: 10px;
+  padding: 20px;
   background: #1a1a1a;
   border-radius: 12px;
   color: white;
@@ -285,15 +275,6 @@ export default {
   display: flex;
   justify-content: space-between;
   margin-bottom: 20px;
-}
-
-.previous-crashes {
-  
-  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-  gap: 8px;
-  margin-bottom: 15px;
-  padding: 10px;
-  overflow-x: auto;
 }
 
 .previous-crashes span {
@@ -311,11 +292,9 @@ export default {
 .game-canvas {
   position: relative;
   width: 100%;
-
-  height: 300px; /* Smaller height for mobile */
+  height: 400px;
   background: linear-gradient(to bottom, #1a1a2e, #16213e);
   overflow: hidden;
-  border-radius: 8px;
 }
 
 .airplane {
@@ -362,19 +341,15 @@ export default {
 }
 
 .betting-panel {
-
-
-  margin-top: 15px;
-  padding: 15px;
+  margin-top: 20px;
+  padding: 20px;
   background: #333;
   border-radius: 8px;
 }
 
 .bet-info {
   display: flex;
-
-  flex-direction: column;
-  gap: 10px;
+  justify-content: space-between;
   margin-bottom: 15px;
 }
 
@@ -383,11 +358,8 @@ export default {
   gap: 15px;
 }
 
-
-
-.quick-bets {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+.quick-amounts {
+  display: flex;
   gap: 5px;
   margin-top: 10px;
 }
@@ -406,6 +378,7 @@ export default {
 
 .bet-button {
   background: #4CAF50;
+  margin-top: 10px;
 }
 
 .cashout-button {
@@ -423,7 +396,7 @@ input[type="number"] {
   background: #333;
   color: white;
   border: 1px solid #555;
-
+  padding: 8px;
   border-radius: 4px;
 }
 
@@ -432,29 +405,38 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* Make buttons and inputs more touch-friendly */
-button, input {
-  min-height: 44px;
-  padding: 10px;
-}
+   .bet-controls-container {
+      width: 100%;
+    }
 
-@media (min-width: 640px) {
-  .quick-bets {
-    grid-template-columns: repeat(6, 1fr);
-  }
+    .input-group {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
 
-  .bet-info {
-    flex-direction: row;
-    justify-content: space-between;
-  }
-}
+    .amount-input, .cashout-input {
+      flex: 1;
+    }
 
-@media (min-width: 768px) {
-  .game-canvas {
-    height: 400px; /* Larger height for desktop */
-  }
-  .crash-game {
-    padding: 20px;
-  }
-}
+    label {
+      display: block;
+      margin-bottom: 5px;
+      color: #888;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      border-radius: 4px;
+      background: #444;
+      color: white;
+      border: 1px solid #555;
+    }
+
+    .quick-amounts {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
 </style>
