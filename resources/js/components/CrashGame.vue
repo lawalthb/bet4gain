@@ -101,21 +101,35 @@ setup() {
   const hasCrashed = ref(false)
   let flightAnimation = null
 
-  onMounted(() => {
-      window.Echo.channel('game')
-          .listen('.GameStarted', (e) => {
-              console.log('🎮 Game Started:', e)
-              startGame()
-          })
-          .listen('.GameUpdated', (e) => {
-              console.log('📈 Multiplier:', e.multiplier)
-              updateMultiplier(e.multiplier)
-          })
-          .listen('.GameCrashed', (e) => {
-              console.log('💥 Crashed at:', e.game.crash_point)
-              crashGame(e.game.crash_point)
-          })
-  })
+onMounted(() => {
+    window.Echo.channel('game')
+        .listen('.GameStarted', (e) => {
+            try {
+                console.log('🎮 Game Started:', e)
+                startGame()
+            } catch (error) {
+                console.error('Error starting game:', error)
+            }
+        })
+        .listen('.GameUpdated', (e) => {
+            try {
+                console.log('📈 Multiplier:', e.multiplier)
+                updateMultiplier(e.multiplier)
+            } catch (error) {
+                console.error('Error updating multiplier:', error)
+            }
+        })
+        .listen('.GameCrashed', (e) => {
+            try {
+                console.log('💥 Crashed at:', e.crash_point)
+                let crashNumber = Number(e.crash_point)
+                crashGame(crashNumber)
+            } catch (error) {
+                console.error('Error handling crash:', error)
+            }
+        })
+})
+
 
   const startGame = () => {
       isGameActive.value = true
@@ -138,42 +152,65 @@ setup() {
       })
   }
 
-  const updateMultiplier = (multiplier) => {
-      currentMultiplier.value = multiplier
-      const progress = (multiplier - 1) / 9
-      gsap.to(airplane.value, {
-          y: gameCanvas.value.clientHeight * (1 - progress),
-          duration: 0.1
-      })
-  }
-
+ const updateMultiplier = (multiplier) => {
+    currentMultiplier.value = multiplier
+    const progress = (multiplier - 1) / 9
+    gsap.to(airplane.value, {
+        y: gameCanvas.value.clientHeight * (1 - progress),
+        duration: 0.1
+    })
+}
   const crashGame = (finalMultiplier) => {
-      isGameActive.value = false
-      hasCrashed.value = true
-      crashPoint.value = finalMultiplier
+    // Stop any ongoing animations
+    if (flightAnimation) flightAnimation.kill()
+      console.log('game as stooped');
+    // Update game state
+    isGameActive.value = false
+    hasCrashed.value = true
+    crashPoint.value = finalMultiplier
+    currentMultiplier.value = finalMultiplier
 
-      if (flightAnimation) flightAnimation.kill()
+    // Check if gameCanvas and airplane refs exist before animation
+   if (gameCanvas.value && airplane.value) {
+        // Get canvas height safely
+        const canvasHeight = gameCanvas.value.offsetHeight || 400 // fallback to default height
 
-      gsap.to(airplane.value, {
-          rotation: 90,
-          y: gameCanvas.value.clientHeight,
-          scale: 0.5,
-          opacity: 0,
-          duration: 0.5,
-          ease: "power2.in",
-          onComplete: startCountdown
-      })
-  }
+        gsap.to(airplane.value, {
+            rotation: 90,
+            y: canvasHeight,
+            scale: 0.5,
+            opacity: 0,
+            duration: 0.5,
+            ease: "power2.in",
+            onComplete: () => {
+                setTimeout(() => {
+                startCountdown()
+            }, 3000)
+                if (hasActiveBet.value) {
+                    hasActiveBet.value = false
+                    canCashOut.value = false
+                    activePlayers.value--
+                }
+            }
+        })
+    }
 
-  const startCountdown = () => {
+    // Update previous crashes list
+    previousCrashes.value.unshift(finalMultiplier)
+    if (previousCrashes.value.length > 5) {
+        previousCrashes.value.pop()
+    }
+}
+const startCountdown = () => {
+    hasCrashed.value = false  // Add this line
     countdown.value = 5
     const timer = setInterval(() => {
-      countdown.value--
-      if (countdown.value <= 0) {
-        clearInterval(timer)
-      }
+        countdown.value--
+        if (countdown.value <= 0) {
+            clearInterval(timer)
+        }
     }, 1000)
-  }
+}
 
   onUnmounted(() => {
     if (flightAnimation) {

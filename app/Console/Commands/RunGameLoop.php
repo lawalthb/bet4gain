@@ -34,7 +34,7 @@ class RunGameLoop extends Command
             $this->info('Game crashed!');
 
             // 5 second countdown
-            for ($i = 5; $i > 0; $i--) {
+            for ($i = 8; $i > 0; $i--) {
                 $this->info("Next game in {$i}...");
                 sleep(1);
             }

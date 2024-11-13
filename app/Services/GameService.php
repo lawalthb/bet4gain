@@ -109,7 +109,7 @@ class GameService
             ]);
 
             $this->pusher->trigger('game', 'GameCrashed', [
-                'game' => $game
+                'crash_point' => $game->crash_point
             ]);
         } catch (\Exception $e) {
             Log::error('Error crashing game', [
