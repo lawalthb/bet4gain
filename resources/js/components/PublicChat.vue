@@ -40,7 +40,8 @@ export default {
       sending: false,  // Add sending state
     };
   },
-  mounted() {
+    mounted() {
+    this.loadInitialMessages();
     window.Echo.channel('public-chat')
       .listen('.Chats', (e) => {
         this.messages.push({
@@ -48,9 +49,25 @@ export default {
           message: e.message.chats,
           time: new Date().toLocaleTimeString(),
         });
+         this.$nextTick(() => {
+            this.scrollToBottom();
+          });
       });
   },
-  methods: {
+    methods: {
+    loadInitialMessages() {
+      axios.get('/chat/messages')
+        .then(response => {
+          this.messages = response.data.map(msg => ({
+            user: msg.user,
+            message: msg.chats,
+            time: new Date(msg.created_at).toLocaleTimeString()
+          }));
+        })
+        .catch(error => {
+          console.error('Error loading messages:', error);
+        });
+    },
       sendMessage() {
 
          if (!window.auth.isLoggedIn) {
@@ -63,7 +80,10 @@ export default {
 
       axios.post('/chat/send', { message: this.newMessage })
         .then(() => {
-          this.newMessage = '';
+            this.newMessage = '';
+            this.$nextTick(() => {
+            this.scrollToBottom();
+          });
         })
         .catch(error => {
           console.error('Error sending message:', error);
@@ -71,19 +91,32 @@ export default {
         .finally(() => {
           this.sending = false;  // Re-enable button
         });
+        },
+     scrollToBottom() {
+      const container = this.$el.querySelector('.messages-container');
+      container.scrollTop = container.scrollHeight;
     },
-  },
+    },
+
+    watch: {
+    messages() {
+      this.$nextTick(() => {
+        this.scrollToBottom();
+      });
+    }
+  }
 };
 </script>
 
 <style scoped>
 .chat-container {
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  padding: 15px;
   max-width: 800px;
   margin: 20px auto;
-  background: #f8f9fa; /* Light background for contrast */
+  background: #1a1a1a;
+  border: 1px solid #333;
 }
 
 .messages-container {
@@ -91,17 +124,17 @@ export default {
   overflow-y: auto;
   margin-bottom: 15px;
   padding: 10px;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+  background: #242424;
+  border-radius: 8px;
 }
 
 .message-bubble {
   margin-bottom: 12px;
   padding: 10px 15px;
-  background: #e0e7ff; /* Subtle blue for message bubbles */
-  color: #1a1a2e;
-  border-radius: 12px;
+  background: #2d2d2d;
+  color: #e0e0e0;
+  border-radius: 8px;
+  border: 1px solid #3a3a3a;
   max-width: 80%;
   animation: fadeIn 0.3s ease-in;
 }
@@ -114,16 +147,16 @@ export default {
 
 .user-name {
   font-weight: bold;
-  color: #2a4365; /* Dark blue for user names */
+  color: #00ff9d; /* Neon green for usernames */
 }
 
 .message-time {
   font-size: 0.8em;
-  color: #718096; /* Gray color for timestamps */
+  color: #666;
 }
 
 .message-content {
-  color: #1c1e21;
+  color: #ffffff;
   line-height: 1.4;
   word-wrap: break-word;
 }
@@ -132,50 +165,76 @@ export default {
   display: flex;
   gap: 10px;
   padding: 10px;
-  background: #edf2f7; /* Light gray for the input container */
-  border-radius: 24px;
+  background: #242424;
+  border-radius: 8px;
 }
 
 .message-input {
   flex: 1;
   padding: 12px 15px;
-  border: none;
-  border-radius: 20px;
-  background: #ffffff;
+  border: 1px solid #333;
+  border-radius: 6px;
+  background: #1a1a1a;
+  color: #ffffff;
   font-size: 14px;
-  color: #2a4365;
   transition: all 0.3s ease;
 }
 
 .message-input:focus {
   outline: none;
-  box-shadow: 0 0 0 2px #2b6cb0; /* Blue outline on focus */
+  border-color: #00ff9d;
+  box-shadow: 0 0 5px rgba(0, 255, 157, 0.3);
+}
+
+.message-input::placeholder {
+  color: #666;
 }
 
 .send-button {
-  padding: 10px 16px;
-  background: #2b6cb0; /* Blue button color */
-  color: #ffffff;
+  padding: 10px 20px;
+  background: #00ff9d;
+  color: #000000;
   border: none;
-  border-radius: 20px;
+  border-radius: 6px;
   cursor: pointer;
   font-weight: bold;
-  transition: background 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .send-button:hover {
-  background: #2c5282; /* Darker blue on hover */
+  background: #00cc7d;
+  box-shadow: 0 0 10px rgba(0, 255, 157, 0.5);
 }
 
-button[disabled] {
-  opacity: 0.6;
+.send-button:disabled {
+  background: #1a1a1a;
+  color: #666;
   cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Custom Scrollbar */
+.messages-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.messages-container::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 3px;
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover {
+  background: #444;
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(5px);
   }
   to {
     opacity: 1;
@@ -183,46 +242,19 @@ button[disabled] {
   }
 }
 
-/* Custom Scrollbar */
-.messages-container::-webkit-scrollbar {
-  width: 8px;
-}
-
-.messages-container::-webkit-scrollbar-track {
-  background: #e1e1e1;
-  border-radius: 4px;
-}
-
-.messages-container::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
-}
-
-.messages-container::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-
-/* Responsive Styling */
+/* Responsive Design */
 @media (max-width: 600px) {
   .chat-container {
-    padding: 15px;
     margin: 10px;
+    padding: 10px;
   }
 
   .message-bubble {
     font-size: 14px;
-    padding: 8px 12px;
-    margin-bottom: 10px;
-  }
-
-  .message-input {
-    font-size: 13px;
-    padding: 10px;
   }
 
   .send-button {
-    font-size: 14px;
-    padding: 8px 14px;
+    padding: 8px 15px;
   }
 }
 </style>

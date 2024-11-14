@@ -54,4 +54,16 @@ class ChatController extends Controller
 
         return response()->json(['status' => 'Message Sent!']);
     }
+
+    public function getMessages()
+    {
+        $messages = Message::with('user')
+            ->latest()
+            ->take(10)
+            ->get();
+
+        return response()->json($messages);
+    }
+
 }
+
