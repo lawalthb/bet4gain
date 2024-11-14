@@ -16,7 +16,7 @@
         </div>
         <div class="bg-gray-800 p-4 rounded-lg">
             <h2 class="text-xl font-bold mb-4">Chat</h2>
-            <!-- Chat component -->
+            <div id="chat"></div >
         </div>
     </div>
 </div>
