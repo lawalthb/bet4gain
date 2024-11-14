@@ -70,7 +70,7 @@
             <div class="border-b border-gray-700 p-4 flex flex-col md:flex-row justify-between items-start md:items-center space-y-2 md:space-y-0">
                 <span class="text-sm md:text-base">{{ ucfirst($transaction->type) }}</span>
                 <span class="{{ $transaction->amount > 0 ? 'text-green-500' : 'text-red-500' }} text-sm md:text-base">
-                    ${{ abs($transaction->amount) }}
+                    ₦{{ abs($transaction->amount) }}
                 </span>
                 <span class="text-gray-400 text-xs md:text-sm">
                     {{ $transaction->created_at->diffForHumans() }}
