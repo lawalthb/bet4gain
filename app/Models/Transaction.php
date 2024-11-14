@@ -2,27 +2,41 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Transaction extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'wallet_id',
+        'user_id',
+        'reference',
         'amount',
-        'type', // deposit, withdrawal, win, loss
+        'gateway_response',
+        'paid_at',
+        'channel',
+        'currency',
+        'ip_address',
+        'metadata',
+        'fees',
+        'authorization_url',
         'status',
-        'reference'
+        'others',
+        'domain',
+        'email',
+        'phone',
+        'callback_url',
+        'type',
+        'payment_method',
+        'transaction_hash',
+        'bank_name',
+        'account_number',
+        'account_name'
     ];
-
-    protected $casts = [
-        'amount' => 'decimal:2'
-    ];
-
-    public function wallet()
+    public function user()
     {
-        return $this->belongsTo(Wallet::class);
+        return $this->belongsTo(User::class);
     }
-}
+    }
+

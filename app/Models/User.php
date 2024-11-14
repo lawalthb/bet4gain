@@ -2,21 +2,28 @@
 
 namespace App\Models;
 
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
         'name',
         'email',
+        'phone_number',
         'password',
-        'balance',
-        'is_bot'
+        'image',
+        'referral_code',
+        'is_active',
+        'is_ban',
+        'user_role_id',
+        'wallet_balance',
+        'withdraw_pin'
     ];
 
     protected $hidden = [
@@ -41,13 +48,15 @@ class User extends Authenticatable
         return $this->belongsToMany(Game::class, 'bets');
     }
 
-    public function wallet()
-    {
-        return $this->hasOne(Wallet::class);
-    }
 
     public function getWinningsAttribute()
     {
         return $this->bets()->sum('won_amount');
     }
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class);
+    }
+
 }
+

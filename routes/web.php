@@ -3,7 +3,9 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\WalletController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Broadcast;
 
 Route::get('/', function () {
@@ -22,10 +24,15 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-    // Wallet routes
-    Route::get('/wallet', [WalletController::class, 'show'])->name('wallet');
-    Route::post('/deposit', [WalletController::class, 'deposit'])->name('deposit');
-    Route::post('/withdraw', [WalletController::class, 'withdraw'])->name('withdraw');
+    Route::middleware(['auth'])->group(function () {
+        Route::post('/deposit', [TransactionController::class, 'initiateDeposit']);
+        Route::post('/withdraw', [TransactionController::class, 'initiateWithdrawal']);
+        Route::post('/bonus/{user}', [TransactionController::class, 'giveBonus'])->middleware('admin');
+
+        Route::get('/wallet', [WalletController::class, 'show'])->name('wallet');
+        Route::post('/deposit', [WalletController::class, 'deposit'])->name('deposit');
+        Route::post('/withdraw', [WalletController::class, 'initiatewithdraw'])->name('withdraw');
+    });
 
     // Game routes
     Route::post('/bet', [GameController::class, 'placeBet'])->name('bet');
@@ -40,3 +47,18 @@ Route::get('/leaderboard', [GameController::class, 'leaderboard'])->name('leader
 Broadcast::channel('game', function ($user) {
     return ['id' => $user->id, 'name' => $user->name];
 });
+
+Auth::routes(['verify' => true]);
+
+Route::post('/payment/webhook', [TransactionController::class, 'handleWebhook'])->name('payment.webhook');
+Route::get('/payment/callback', [TransactionController::class, 'handleCallback'])->name('transaction.callback');
+
+Route::get('/transactions', [TransactionController::class, 'getTransactions'])->middleware('auth');
+
+
+
+Auth::routes();
+
+Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+
+Route::get('/user/balance', [TransactionController::class, 'getUserBalance'])->middleware('auth');

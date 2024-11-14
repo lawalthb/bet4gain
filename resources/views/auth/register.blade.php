@@ -11,6 +11,10 @@
             <label class="block mb-2">Name</label>
             <input type="text" name="name" class="w-full p-2 rounded bg-gray-700" required>
         </div>
+        <div class="mb-4">
+            <label class="block mb-2">Phone Number</label>
+            <input type="text" name="phone_number" class="w-full p-2 rounded bg-gray-700" required>
+        </div>
 
         <div class="mb-4">
             <label class="block mb-2">Email</label>

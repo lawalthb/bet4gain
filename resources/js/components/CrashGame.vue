@@ -2,10 +2,11 @@
 
   <div class="crash-game">
     <div class="game-stats">
-      <div class="current-stats">
-        <span>Players: {{ activePlayers }}</span>
-        <span>Total Bets: ${{ totalBets }}</span>
-      </div>
+     <div class="current-stats">
+
+  <span>Players: {{ activePlayers }}</span>
+  <span>Total Bets: ${{ totalBets }}</span>
+</div>
       <div class="previous-crashes">
         <span v-for="(crash, index) in previousCrashes"
               :key="index"
@@ -28,11 +29,19 @@
         Crashed at {{ crashPoint.toFixed(2) }}x
       </div>
     </div>
+ <div class="balance-card">
+      <span v-if="isLoggedIn">Balance: ₦{{ userBalance }}</span>
+      <span v-else>Balance: ₦{{ demoBalance.toFixed(2) }}</span>
+    </div>
+
+    <span>Balance: ₦{{ userBalance.toFixed(2) }}</span>
     <div class="betting-panel">
       <div class="bet-controls-container">
         <div class="input-group">
+
           <div class="amount-input">
-            <label>Amount</label>
+
+            <label>Amount </label>
             <input
               type="number"
               v-model="betAmount"
@@ -99,7 +108,8 @@ setup() {
   const currentMultiplier = ref(1.00)
   const isGameActive = ref(false)
   const hasCrashed = ref(false)
-  let flightAnimation = null
+    let flightAnimation = null
+
 
 onMounted(() => {
     window.Echo.channel('game')
@@ -312,8 +322,24 @@ const startCountdown = () => {
   display: flex;
   justify-content: space-between;
   margin-bottom: 20px;
-}
 
+}
+@media (max-width: 768px) {
+  .game-stats {
+    flex-direction: column;
+  }
+
+  .current-stats {
+    order: 1;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .previous-crashes {
+    order: 2;
+  }
+}
 .previous-crashes span {
   margin-left: 8px;
   padding: 4px 8px;
@@ -378,7 +404,7 @@ const startCountdown = () => {
 }
 
 .betting-panel {
-  margin-top: 20px;
+  margin-top: 5px;
   padding: 20px;
   background: #333;
   border-radius: 8px;
