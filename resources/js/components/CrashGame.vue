@@ -1,12 +1,12 @@
 <template>
-
   <div class="crash-game">
     <div class="game-stats">
-     <div class="current-stats">
-
-  <span>Players: {{ activePlayers }}</span>
-  <span>Total Bets: ${{ totalBets }}</span>
-</div>
+      <div class="current-stats">
+        <span>Players: {{ activePlayers }}</span>
+        <span>Total Bets: ₦{{ totalBets }}</span>
+        <span v-if="isLoggedIn">Balance: ₦{{ userBalance }}</span>
+        <span v-else>Balance: ₦{{ demoBalance.toFixed(2) }}</span>
+      </div>
       <div class="previous-crashes">
         <span v-for="(crash, index) in previousCrashes"
               :key="index"
@@ -29,18 +29,11 @@
         Crashed at {{ crashPoint.toFixed(2) }}x
       </div>
     </div>
- <div class="balance-card">
-      <span v-if="isLoggedIn">Balance: ₦{{ userBalance }}</span>
-      <span v-else>Balance: ₦{{ demoBalance.toFixed(2) }}</span>
-    </div>
 
-    <span>Balance: ₦{{ userBalance.toFixed(2) }}</span>
     <div class="betting-panel">
       <div class="bet-controls-container">
         <div class="input-group">
-
           <div class="amount-input">
-
             <label>Amount </label>
             <input
               type="number"
@@ -90,196 +83,204 @@
         </button>
       </div>
     </div>
-
-
-
-
   </div>
 </template>
+
 <script>
 import { ref, onMounted, onUnmounted } from 'vue'
 import gsap from 'gsap'
 
 export default {
-name: 'CrashGame',
-setup() {
-  const gameCanvas = ref(null)
-  const airplane = ref(null)
-  const currentMultiplier = ref(1.00)
-  const isGameActive = ref(false)
-  const hasCrashed = ref(false)
+  name: 'CrashGame',
+  setup() {
+    const gameCanvas = ref(null)
+    const airplane = ref(null)
+    const currentMultiplier = ref(1.00)
+    const isGameActive = ref(false)
+    const hasCrashed = ref(false)
     let flightAnimation = null
 
+    const isLoggedIn = ref(window.auth.isLoggedIn)
+    const userBalance = ref(window.auth.user ? window.auth.user.wallet_balance : 0)
+    const demoBalance = ref(1000)
 
-onMounted(() => {
-    window.Echo.channel('game')
+    onMounted(() => {
+      window.Echo.channel('game')
         .listen('.GameStarted', (e) => {
-            try {
-                console.log('🎮 Game Started:', e)
-                startGame()
-            } catch (error) {
-                console.error('Error starting game:', error)
-            }
+          try {
+            console.log('🎮 Game Started:', e)
+            startGame()
+          } catch (error) {
+            console.error('Error starting game:', error)
+          }
         })
         .listen('.GameUpdated', (e) => {
-            try {
-                console.log('📈 Multiplier:', e.multiplier)
-                updateMultiplier(e.multiplier)
-            } catch (error) {
-                console.error('Error updating multiplier:', error)
-            }
+          try {
+            console.log('📈 Multiplier:', e.multiplier)
+            updateMultiplier(e.multiplier)
+          } catch (error) {
+            console.error('Error updating multiplier:', error)
+          }
         })
         .listen('.GameCrashed', (e) => {
-            try {
-                console.log('💥 Crashed at:', e.crash_point)
-                let crashNumber = Number(e.crash_point)
-                crashGame(crashNumber)
-            } catch (error) {
-                console.error('Error handling crash:', error)
-            }
+          try {
+            console.log('💥 Crashed at:', e.crash_point)
+            let crashNumber = Number(e.crash_point)
+            crashGame(crashNumber)
+          } catch (error) {
+            console.error('Error handling crash:', error)
+          }
         })
-})
 
+      if (isLoggedIn.value) {
+        loadUserBalance()
+      }
+    })
 
-  const startGame = () => {
+    const loadUserBalance = async () => {
+      try {
+        const response = await axios.get('/user/balance')
+        userBalance.value = response.data.balance
+      } catch (error) {
+        console.error('Failed to load balance:', error)
+      }
+    }
+
+    const startGame = () => {
       isGameActive.value = true
       hasCrashed.value = false
       currentMultiplier.value = 1.00
 
       gsap.set(airplane.value, {
-          x: 0,
-          y: gameCanvas.value.clientHeight,
-          scale: 1,
-          opacity: 1,
-          rotation: 0
+        x: 0,
+        y: gameCanvas.value.clientHeight,
+        scale: 1,
+        opacity: 1,
+        rotation: 0
       })
 
       flightAnimation = gsap.to(airplane.value, {
-          x: gameCanvas.value.clientWidth,
-          y: 0,
-          ease: "power1.in",
-          duration: 15
+        x: gameCanvas.value.clientWidth,
+        y: 0,
+        ease: "power1.in",
+        duration: 15
       })
-  }
+    }
 
- const updateMultiplier = (multiplier) => {
-    currentMultiplier.value = multiplier
-    const progress = (multiplier - 1) / 9
-    gsap.to(airplane.value, {
+    const updateMultiplier = (multiplier) => {
+      currentMultiplier.value = multiplier
+      const progress = (multiplier - 1) / 9
+      gsap.to(airplane.value, {
         y: gameCanvas.value.clientHeight * (1 - progress),
         duration: 0.1
-    })
-}
-  const crashGame = (finalMultiplier) => {
-    // Stop any ongoing animations
-    if (flightAnimation) flightAnimation.kill()
-      console.log('game as stooped');
-    // Update game state
-    isGameActive.value = false
-    hasCrashed.value = true
-    crashPoint.value = finalMultiplier
-    currentMultiplier.value = finalMultiplier
+      })
+    }
 
-    // Check if gameCanvas and airplane refs exist before animation
-   if (gameCanvas.value && airplane.value) {
-        // Get canvas height safely
-        const canvasHeight = gameCanvas.value.offsetHeight || 400 // fallback to default height
+    const crashGame = (finalMultiplier) => {
+      if (flightAnimation) flightAnimation.kill()
+      console.log('game as stooped');
+      isGameActive.value = false
+      hasCrashed.value = true
+      crashPoint.value = finalMultiplier
+      currentMultiplier.value = finalMultiplier
+
+      if (gameCanvas.value && airplane.value) {
+        const canvasHeight = gameCanvas.value.offsetHeight || 400
 
         gsap.to(airplane.value, {
-            rotation: 90,
-            y: canvasHeight,
-            scale: 0.5,
-            opacity: 0,
-            duration: 0.5,
-            ease: "power2.in",
-            onComplete: () => {
-                setTimeout(() => {
-                startCountdown()
+          rotation: 90,
+          y: canvasHeight,
+          scale: 0.5,
+          opacity: 0,
+          duration: 0.5,
+          ease: "power2.in",
+          onComplete: () => {
+            setTimeout(() => {
+              startCountdown()
             }, 3000)
-                if (hasActiveBet.value) {
-                    hasActiveBet.value = false
-                    canCashOut.value = false
-                    activePlayers.value--
-                }
+            if (hasActiveBet.value) {
+              hasActiveBet.value = false
+              canCashOut.value = false
+              activePlayers.value--
             }
+          }
         })
+      }
+
+      previousCrashes.value.unshift(finalMultiplier)
+      if (previousCrashes.value.length > 5) {
+        previousCrashes.value.pop()
+      }
     }
 
-    // Update previous crashes list
-    previousCrashes.value.unshift(finalMultiplier)
-    if (previousCrashes.value.length > 5) {
-        previousCrashes.value.pop()
-    }
-}
-const startCountdown = () => {
-    hasCrashed.value = false  // Add this line
-    countdown.value = 5
-    const timer = setInterval(() => {
+    const startCountdown = () => {
+      hasCrashed.value = false
+      countdown.value = 5
+      const timer = setInterval(() => {
         countdown.value--
         if (countdown.value <= 0) {
-            clearInterval(timer)
+          clearInterval(timer)
         }
-    }, 1000)
-}
-
-  onUnmounted(() => {
-    if (flightAnimation) {
-      flightAnimation.kill()
+      }, 1000)
     }
-  })
 
-  const flightPath = ref(null)
-  const betAmount = ref(10)
-  const canCashOut = ref(false)
-  const userBalance = ref(1000)
-  const hasActiveBet = ref(false)
-  const previousCrashes = ref([1.98, 3.42, 1.23, 8.56, 2.34])
-  const activePlayers = ref(0)
-  const totalBets = ref(0)
-  const autoEnabled = ref(false)
-  const autoCashoutPoint = ref(2.00)
-  const crashPoint = ref(0)
-  const countdown = ref(5)
+    onUnmounted(() => {
+      if (flightAnimation) {
+        flightAnimation.kill()
+      }
+    })
 
-  const placeBet = () => {
-    if (betAmount.value <= userBalance.value) {
-      userBalance.value -= betAmount.value
-      hasActiveBet.value = true
-      canCashOut.value = true
-      totalBets.value += betAmount.value
-      activePlayers.value++
+    const flightPath = ref(null)
+    const betAmount = ref(10)
+    const canCashOut = ref(false)
+    const hasActiveBet = ref(false)
+    const previousCrashes = ref([1.98, 3.42, 1.23, 8.56, 2.34])
+    const activePlayers = ref(0)
+    const totalBets = ref(0)
+    const autoEnabled = ref(false)
+    const autoCashoutPoint = ref(2.00)
+    const crashPoint = ref(0)
+    const countdown = ref(5)
+
+    const placeBet = () => {
+      if (betAmount.value <= userBalance.value) {
+        userBalance.value -= betAmount.value
+        hasActiveBet.value = true
+        canCashOut.value = true
+        totalBets.value += betAmount.value
+        activePlayers.value++
+      }
     }
-  }
 
-  const cashOut = () => {
-    if (canCashOut.value) {
-      const winnings = betAmount.value * currentMultiplier.value
-      userBalance.value += winnings
-      canCashOut.value = false
-      hasActiveBet.value = false
-      activePlayers.value--
+    const cashOut = () => {
+      if (canCashOut.value) {
+        const winnings = betAmount.value * currentMultiplier.value
+        userBalance.value += winnings
+        canCashOut.value = false
+        hasActiveBet.value = false
+        activePlayers.value--
+      }
     }
-  }
 
-  const quickBet = (amount) => {
-    if (!isGameActive.value) {
-      betAmount.value = amount
+    const quickBet = (amount) => {
+      if (!isGameActive.value) {
+        betAmount.value = amount
+      }
     }
-  }
 
-  const betHalf = () => {
-    betAmount.value = Math.floor(betAmount.value / 2)
-  }
+    const betHalf = () => {
+      betAmount.value = Math.floor(betAmount.value / 2)
+    }
 
-  const betDouble = () => {
-    betAmount.value = Math.min(betAmount.value * 2, userBalance.value)
-  }
+    const betDouble = () => {
+      betAmount.value = Math.min(betAmount.value * 2, userBalance.value)
+    }
 
-  const betMax = () => {
-    betAmount.value = userBalance.value
-  }
+    const betMax = () => {
+      betAmount.value = userBalance.value
+    }
 
-  return {
+    return {
       gameCanvas,
       airplane,
       currentMultiplier,
@@ -302,11 +303,15 @@ const startCountdown = () => {
       quickBet,
       betHalf,
       betDouble,
-      betMax
+      betMax,
+      isLoggedIn,
+      demoBalance
+    }
   }
 }
-}
 </script>
+
+
 <style scoped>
 .crash-game {
   width: 100%;
