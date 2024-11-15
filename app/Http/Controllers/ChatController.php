@@ -17,7 +17,7 @@ class ChatController extends Controller
 
     public function __construct()
     {
-        $this->middleware('auth');
+       // $this->middleware('auth');
         $this->pusher = new Pusher(
             '87892ed076b91483ee2a',
             '1043bfa797b5c0b09de5',

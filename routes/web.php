@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BetController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\WalletController;
@@ -71,3 +72,17 @@ Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name
 Route::post('/chat/send', [ChatController::class, 'sendMessage'])->middleware('auth');
 
 Route::get('/chat/messages', [ChatController::class, 'getMessages']);
+
+// Betting Routes
+Route::middleware(['auth'])->group(function () {
+    Route::post('/bet/place', [BetController::class, 'placeBet'])->name('bet.place');
+    Route::post('/bet/cashout', [BetController::class, 'cashout'])->name('bet.cashout');
+    Route::get('/bet/history', [BetController::class, 'getBetHistory'])->name('bet.history');
+});
+
+// Public Game Routes
+Route::get('/game/{gameId}/bets', [BetController::class, 'getCurrentGameBets'])->name('game.bets');
+Route::get('/game/{gameId}/stats', [BetController::class, 'getGameStats'])->name('game.stats');
+
+// Demo/Guest Routes (no auth required)
+Route::post('/bet/demo', [BetController::class, 'placeBet'])->name('bet.demo');

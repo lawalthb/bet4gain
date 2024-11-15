@@ -45,7 +45,7 @@
           </div>
 
           <div class="cashout-input">
-            <label>Auto Cashout</label>
+            <label>Auto Cashout (x)</label>
             <input
               type="number"
               v-model="autoCashoutPoint"
@@ -65,12 +65,11 @@
           <button @click="betMax">Max</button>
         </div>
       </div>
-
       <div class="action-buttons">
         <button
           class="bet-button"
           @click="placeBet"
-          :disabled="isGameActive || betAmount > userBalance"
+          :disabled="!canPlaceBet"
           v-if="!hasActiveBet">
           Place Bet
         </button>
@@ -87,7 +86,7 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted , computed} from 'vue'
 import gsap from 'gsap'
 
 export default {
@@ -98,17 +97,27 @@ export default {
     const currentMultiplier = ref(1.00)
     const isGameActive = ref(false)
     const hasCrashed = ref(false)
-    let flightAnimation = null
+      let flightAnimation = null
+      const currentGameId = ref(null)
+    const currentBetId = ref(null)
 
     const isLoggedIn = ref(window.auth.isLoggedIn)
     const userBalance = ref(window.auth.user ? window.auth.user.wallet_balance : 0)
-    const demoBalance = ref(1000)
+      const demoBalance = ref(1000)
+
+  const canPlaceBet = computed(() => {
+      if (isLoggedIn.value) {
+        return !isGameActive.value && betAmount.value > 0 && betAmount.value <= userBalance.value;
+      }
+      return !isGameActive.value && betAmount.value > 0 && betAmount.value <= demoBalance.value;
+    });
 
     onMounted(() => {
       window.Echo.channel('game')
         .listen('.GameStarted', (e) => {
           try {
-            console.log('🎮 Game Started:', e)
+              console.log('🎮 Game Started:', e)
+             currentGameId.value = e.game.id
             startGame()
           } catch (error) {
             console.error('Error starting game:', error)
@@ -237,30 +246,92 @@ export default {
     const previousCrashes = ref([1.98, 3.42, 1.23, 8.56, 2.34])
     const activePlayers = ref(0)
     const totalBets = ref(0)
-    const autoEnabled = ref(false)
+    const autoEnabled = ref(true)
     const autoCashoutPoint = ref(2.00)
     const crashPoint = ref(0)
     const countdown = ref(5)
 
-    const placeBet = () => {
-      if (betAmount.value <= userBalance.value) {
-        userBalance.value -= betAmount.value
-        hasActiveBet.value = true
-        canCashOut.value = true
-        totalBets.value += betAmount.value
-        activePlayers.value++
+    // const placeBet = () => {
+    //   if (betAmount.value <= userBalance.value) {
+    //     userBalance.value -= betAmount.value
+    //     hasActiveBet.value = true
+    //     canCashOut.value = true
+    //     totalBets.value += betAmount.value
+    //     activePlayers.value++
+    //   }
+    // }
+
+    // const cashOut = () => {
+    //   if (canCashOut.value) {
+    //     const winnings = betAmount.value * currentMultiplier.value
+    //     userBalance.value += winnings
+    //     canCashOut.value = false
+    //     hasActiveBet.value = false
+    //     activePlayers.value--
+    //   }
+    // }
+
+
+   const placeBet = async () => {
+  if (!isGameActive.value && betAmount.value > 0) {
+    // Handle demo betting
+    if (!isLoggedIn.value) {
+      if (betAmount.value <= demoBalance.value) {
+        demoBalance.value -= betAmount.value;
+        hasActiveBet.value = true;
+        canCashOut.value = true;
+        totalBets.value += betAmount.value;
+        activePlayers.value++;
       }
+      return;
     }
 
-    const cashOut = () => {
-      if (canCashOut.value) {
-        const winnings = betAmount.value * currentMultiplier.value
-        userBalance.value += winnings
-        canCashOut.value = false
-        hasActiveBet.value = false
-        activePlayers.value--
+    // Handle real betting for authenticated users
+    try {
+      const response = await axios.post('/bet/place', {
+        amount: betAmount.value,
+        auto_cashout: autoCashoutPoint.value,
+        game_id: currentGameId.value
+      });
+
+      if (response.data.success) {
+        hasActiveBet.value = true;
+        canCashOut.value = true;
+        userBalance.value = response.data.wallet_balance;
+        currentBetId.value = response.data.bet.id;
+        totalBets.value += betAmount.value;
+        activePlayers.value++;
       }
+    } catch (error) {
+      console.error('Betting error:', error.response?.data?.message || error.message);
     }
+  }
+};
+
+
+ const cashOut = async () => {
+  if (canCashOut.value && hasActiveBet.value) {
+    try {
+      const response = await axios.post('/bet/cashout', {
+        bet_id: currentBetId.value,
+        crash_point: currentMultiplier.value
+      });
+
+      if (response.data.success) {
+        canCashOut.value = false;
+        hasActiveBet.value = false;
+        userBalance.value = response.data.wallet_balance;
+        activePlayers.value--;
+
+        // Show win notification
+        showWinAmount(response.data.win_amount);
+      }
+    } catch (error) {
+      console.error('Cashout error:', error.response?.data?.message || error.message);
+    }
+  }
+};
+
 
     const quickBet = (amount) => {
       if (!isGameActive.value) {
@@ -305,7 +376,11 @@ export default {
       betDouble,
       betMax,
       isLoggedIn,
-      demoBalance
+        demoBalance,
+      currentBetId: null,
+    currentGameId: null,
+        betErrors: null,
+     canPlaceBet,
     }
   }
 }
@@ -508,3 +583,4 @@ button:disabled {
       flex-wrap: wrap;
     }
 </style>
+
