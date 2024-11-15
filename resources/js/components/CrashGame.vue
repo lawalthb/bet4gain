@@ -15,7 +15,21 @@
         </span>
       </div>
     </div>
-
+<!-- Add this notification section -->
+     <div class="notifications-wrapper">
+      <div v-for="(notification, index) in notifications"
+           :key="index"
+           :class="['game-notification', notification.type]">
+        <div class="notification-content">
+          <span :class="`${notification.type}-amount`">
+            {{ notification.type === 'win' ? '+' : '-' }}₦{{ notification.amount.toFixed(2) }}
+          </span>
+          <span :class="`${notification.type}-text`">
+            {{ notification.type === 'win' ? 'Winner!' : 'Better luck next time!' }}
+          </span>
+        </div>
+      </div>
+    </div>
     <div class="game-canvas" ref="gameCanvas">
       <div class="flight-path" ref="flightPath"></div>
       <div class="airplane" ref="airplane"><img src="/resources/img/rocket3.png" style="height: 100px;" /> </div>
@@ -110,7 +124,8 @@ export default {
     const hasCrashed = ref(false)
       let flightAnimation = null
       const currentGameId = ref(null)
-    const currentBetId = ref(null)
+      const currentBetId = ref(null)
+    const notifications = ref([])
 
     const isLoggedIn = ref(window.auth.isLoggedIn)
     const userBalance = ref(window.auth.user ? window.auth.user.wallet_balance : 0)
@@ -228,7 +243,20 @@ export default {
             setTimeout(() => {
               startCountdown()
             }, 3000)
-            if (hasActiveBet.value) {
+              if (hasActiveBet.value) {
+                // Update lost status in database
+        axios.post('/game/crash', {
+            game_id: currentGameId.value,
+            crash_point: finalMultiplier
+        }).then(() => {
+            // Refresh user balance
+            if (isLoggedIn.value) {
+                loadUserBalance();
+            }
+        });
+
+        
+                  showLoseNotification(betAmount.value);
               hasActiveBet.value = false
               canCashOut.value = false
               activePlayers.value--
@@ -270,7 +298,9 @@ export default {
     const autoEnabled = ref(true)
     const autoCashoutPoint = ref(2.00)
     const crashPoint = ref(0)
-    const countdown = ref(5)
+      const countdown = ref(5)
+
+const notificationTimeout = ref(null)
 
     // const placeBet = () => {
     //   if (betAmount.value <= userBalance.value) {
@@ -376,15 +406,26 @@ const handleGameCrash = (crashPoint) => {
 };
 
 const showWinNotification = (amount) => {
-  // Implement win animation/notification
-  console.log(`Won: ${amount}`);
+  notifications.value.push({
+    type: 'win',
+    amount: amount
+  });
+
+  setTimeout(() => {
+    notifications.value.shift();
+  }, 3000);
 };
 
 const showLoseNotification = (amount) => {
-  // Implement lose animation/notification
-  console.log(`Lost: ${amount}`);
-};
+  notifications.value.push({
+    type: 'lose',
+    amount: amount
+  });
 
+  setTimeout(() => {
+    notifications.value.shift();
+  }, 3000);
+};
     const quickBet = (amount) => {
       if (!isGameActive.value) {
         betAmount.value = amount
@@ -432,7 +473,11 @@ const showLoseNotification = (amount) => {
       currentBetId: null,
     currentGameId: null,
         betErrors: null,
-     canPlaceBet,
+        canPlaceBet,
+     notifications,
+        notificationTimeout,
+  showWinNotification,
+  showLoseNotification
     }
   }
 }
@@ -661,6 +706,66 @@ button:disabled {
   .auto-cashout-toggle {
     width: 100%;
     justify-content: center;
+  }
+}
+
+
+.game-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 20px;
+  border-radius: 8px;
+  color: white;
+  animation: slideIn 0.5s ease-out;
+  z-index: 1000;
+}
+
+.notification-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.win {
+  background: linear-gradient(45deg, #4CAF50, #45a049);
+  box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
+}
+
+.lose {
+  background: linear-gradient(45deg, #f44336, #e53935);
+  box-shadow: 0 0 20px rgba(244, 67, 54, 0.3);
+}
+
+.win-amount, .lose-amount {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.win-text, .lose-text {
+  font-size: 16px;
+}
+
+.fade-out {
+  animation: fadeOut 1s ease-out forwards;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  to {
+    opacity: 0;
+    transform: translateY(-20px);
   }
 }
 </style>

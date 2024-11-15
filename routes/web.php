@@ -86,3 +86,5 @@ Route::get('/game/{gameId}/stats', [BetController::class, 'getGameStats'])->name
 
 // Demo/Guest Routes (no auth required)
 Route::post('/bet/demo', [BetController::class, 'placeBet'])->name('bet.demo');
+
+Route::post('/game/crash', [GameController::class, 'handleGameCrash'])->name('game.crash');

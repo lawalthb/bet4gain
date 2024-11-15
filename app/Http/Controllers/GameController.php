@@ -83,4 +83,29 @@ class GameController extends Controller
             'total_profit' => $bets->sum('profit')
         ];
     }
+
+    public function handleGameCrash(Request $request)
+    {
+        $crashPoint = $request->crash_point;
+$gameId = ($request->game_id -1);
+        // Update all pending bets for this game to lost status
+        $pendingBets = Bet::where('game_id', $gameId )
+            ->where('status', 'pending')
+            ->get();
+
+        foreach ($pendingBets as $bet) {
+            $bet->update([
+                'status' => 'lost',
+                'profit' => -$bet->amount
+            ]);
+        }
+
+        // Return updated balances for all affected users
+        return response()->json([
+            'success' => true,
+            'message' => 'Bets updated successfully'
+        ]);
+    }
+
+
 }
