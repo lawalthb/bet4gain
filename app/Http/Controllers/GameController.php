@@ -87,9 +87,9 @@ class GameController extends Controller
     public function handleGameCrash(Request $request)
     {
         $crashPoint = $request->crash_point;
-$gameId = ($request->game_id -1);
+        $gameId = ($request->game_id - 1);
         // Update all pending bets for this game to lost status
-        $pendingBets = Bet::where('game_id', $gameId )
+        $pendingBets = Bet::where('game_id', $gameId)
             ->where('status', 'pending')
             ->get();
 
@@ -108,4 +108,26 @@ $gameId = ($request->game_id -1);
     }
 
 
+
+    public function getHistory()
+    {
+        $history = Game::with(['bets' => function ($query) {
+            $query->where('user_id', auth()->id());
+        }])
+        ->latest()
+        ->paginate(10)
+        ->through(function ($game) {
+            $bet = $game->bets->first();
+            return [
+                'id' => $game->id,
+                'created_at' => $game->created_at,
+                'crash_point' => $game->crash_point,
+                'bet_amount' => $bet ? $bet->amount : 0,
+                'profit' => $bet ? $bet->profit : 0,
+                'status' => $bet ? $bet->status : 'no_bet'
+            ];
+        });
+
+        return response()->json($history);
+    }
 }

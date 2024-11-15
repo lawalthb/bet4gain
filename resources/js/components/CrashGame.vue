@@ -254,7 +254,6 @@ export default {
                 loadUserBalance();
             }
         });
-
         
                   showLoseNotification(betAmount.value);
               hasActiveBet.value = false

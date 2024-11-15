@@ -5,6 +5,7 @@ use App\Http\Controllers\GameController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BetController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\LeaderboardController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\WalletController;
 use Illuminate\Support\Facades\Auth;
@@ -42,8 +43,7 @@ Route::middleware('auth')->group(function () {
 });
 
 // Public game data
-Route::get('/game-history', [GameController::class, 'history'])->name('game.history');
-Route::get('/leaderboard', [GameController::class, 'leaderboard'])->name('leaderboard');
+Route::get('/game/history', [GameController::class, 'getHistory'])->name('game.history');Route::get('/leaderboard', [GameController::class, 'leaderboard'])->name('leaderboard');
 
 // WebSocket channels
 Broadcast::channel('game', function ($user) {
@@ -87,4 +87,4 @@ Route::get('/game/{gameId}/stats', [BetController::class, 'getGameStats'])->name
 // Demo/Guest Routes (no auth required)
 Route::post('/bet/demo', [BetController::class, 'placeBet'])->name('bet.demo');
 
-Route::post('/game/crash', [GameController::class, 'handleGameCrash'])->name('game.crash');
+Route::get('/leaderboard/{timeFrame}', [LeaderboardController::class, 'getLeaders']);

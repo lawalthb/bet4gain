@@ -8,15 +8,15 @@
     <div class="space-y-4 md:space-y-6">
         <div class="bg-gray-800 p-4 rounded-lg">
             <h2 class="text-xl font-bold mb-4">Game History</h2>
-            <!-- Game history component -->
+            <div id="game-history"></div>
         </div>
         <div class="bg-gray-800 p-4 rounded-lg">
             <h2 class="text-xl font-bold mb-4">Leaderboard</h2>
-            <!-- Leaderboard component -->
+            <div id="leader-board"></div>
         </div>
         <div class="bg-gray-800 p-4 rounded-lg">
             <h2 class="text-xl font-bold mb-4">Chat</h2>
-            <div id="chat"></div >
+            <div id="chat"></div>
         </div>
     </div>
 </div>

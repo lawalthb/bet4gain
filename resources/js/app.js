@@ -7,3 +7,13 @@ createApp(App).mount('#app');
 import PublicChat from './components/PublicChat.vue';
 
 createApp(PublicChat).mount('#chat');
+
+
+import GameHistory from './components/GameHistory.vue';
+
+createApp(GameHistory).mount('#game-history');
+
+
+import LeaderBoard from './components/LeaderBoard.vue';
+
+createApp(LeaderBoard).mount('#leader-board');
