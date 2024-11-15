@@ -32,38 +32,49 @@
 
     <div class="betting-panel">
       <div class="bet-controls-container">
-        <div class="input-group">
-          <div class="amount-input">
-            <label>Amount </label>
-            <input
-              type="number"
-              v-model="betAmount"
-              :disabled="isGameActive"
-              min="1"
-              :max="userBalance"
-            />
-          </div>
+    <div class="input-group">
+      <div class="amount-input">
+        <label>Amount </label>
+        <input
+          type="number"
+          v-model="betAmount"
+          :disabled="isGameActive"
+          min="1"
+          :max="userBalance"
+        />
+      </div>
 
-          <div class="cashout-input">
-            <label>Auto Cashout (x)</label>
-            <input
-              type="number"
-              v-model="autoCashoutPoint"
-              :disabled="!autoEnabled"
-              step="0.1"
-              min="1.1"
-            />
-          </div>
+      <div class="cashout-input">
+        <label>Cashout (x)</label>
+        <div class="cashout-controls">
+          <input
+            type="number"
+            v-model="autoCashoutPoint"
+            :disabled="!autoEnabled"
+            step="0.1"
+            min="1.1"
+          />
         </div>
+      </div>
+    </div>
 
-        <div class="quick-amounts">
-          <button @click="quickBet(5)">$5</button>
-          <button @click="quickBet(10)">$10</button>
-          <button @click="quickBet(50)">$50</button>
-          <button @click="betHalf">1/2</button>
-          <button @click="betDouble">2x</button>
-          <button @click="betMax">Max</button>
-        </div>
+    <div class="controls-row">
+      <div class="quick-amounts">
+        <button @click="quickBet(5)">$5</button>
+        <button @click="quickBet(10)">$10</button>
+        <button @click="quickBet(50)">$50</button>
+        <button @click="betHalf">1/2</button>
+        <button @click="betDouble">2x</button>
+        <button @click="betMax">Max</button>
+      </div>
+
+      <div class="auto-cashout-toggle">
+        <label>
+          <input type="checkbox" v-model="autoEnabled" :disabled="isGameActive" />
+          Auto Cashout
+        </label>
+      </div>
+    </div>
       </div>
       <div class="action-buttons">
         <button
@@ -112,6 +123,14 @@ export default {
       return !isGameActive.value && betAmount.value > 0 && betAmount.value <= demoBalance.value;
     });
 
+
+    const checkAutoCashout = (currentMultiplier) => {
+  if (hasActiveBet.value && autoEnabled.value && autoCashoutPoint.value) {
+    if (currentMultiplier >= autoCashoutPoint.value) {
+      cashOut();
+    }
+  }
+};
     onMounted(() => {
       window.Echo.channel('game')
         .listen('.GameStarted', (e) => {
@@ -179,10 +198,12 @@ export default {
     const updateMultiplier = (multiplier) => {
       currentMultiplier.value = multiplier
       const progress = (multiplier - 1) / 9
-      gsap.to(airplane.value, {
-        y: gameCanvas.value.clientHeight * (1 - progress),
-        duration: 0.1
-      })
+        gsap.to(airplane.value, {
+            y: gameCanvas.value.clientHeight * (1 - progress),
+            duration: 0.1
+        });
+       // Check for auto-cashout
+  checkAutoCashout(multiplier);
     }
 
     const crashGame = (finalMultiplier) => {
@@ -309,8 +330,20 @@ export default {
 };
 
 
- const cashOut = async () => {
+const cashOut = async () => {
   if (canCashOut.value && hasActiveBet.value) {
+    // Handle demo cashout
+    if (!isLoggedIn.value) {
+      const winAmount = betAmount.value * currentMultiplier.value;
+      demoBalance.value += winAmount;
+      showWinNotification(winAmount);
+      hasActiveBet.value = false;
+      canCashOut.value = false;
+      activePlayers.value--;
+      return;
+    }
+
+    // Handle real cashout
     try {
       const response = await axios.post('/bet/cashout', {
         bet_id: currentBetId.value,
@@ -322,9 +355,7 @@ export default {
         hasActiveBet.value = false;
         userBalance.value = response.data.wallet_balance;
         activePlayers.value--;
-
-        // Show win notification
-        showWinAmount(response.data.win_amount);
+        showWinNotification(response.data.win_amount);
       }
     } catch (error) {
       console.error('Cashout error:', error.response?.data?.message || error.message);
@@ -332,6 +363,27 @@ export default {
   }
 };
 
+const handleGameCrash = (crashPoint) => {
+  if (hasActiveBet.value) {
+    if (!isLoggedIn.value) {
+      // Demo loss
+      showLoseNotification(betAmount.value);
+    }
+    hasActiveBet.value = false;
+    canCashOut.value = false;
+    activePlayers.value--;
+  }
+};
+
+const showWinNotification = (amount) => {
+  // Implement win animation/notification
+  console.log(`Won: ${amount}`);
+};
+
+const showLoseNotification = (amount) => {
+  // Implement lose animation/notification
+  console.log(`Lost: ${amount}`);
+};
 
     const quickBet = (amount) => {
       if (!isGameActive.value) {
@@ -555,7 +607,7 @@ button:disabled {
     .input-group {
       display: flex;
       gap: 15px;
-      margin-bottom: 15px;
+      margin-bottom: 5px;
     }
 
     .amount-input, .cashout-input {
@@ -582,5 +634,34 @@ button:disabled {
       gap: 8px;
       flex-wrap: wrap;
     }
+
+    .controls-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0px;
+}
+
+.auto-cashout-toggle {
+  display: flex;
+  align-items: center;
+  color: #888;
+}
+
+.auto-cashout-toggle input[type="checkbox"] {
+  margin-right: 5px;
+}
+
+@media (max-width: 768px) {
+  .controls-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .auto-cashout-toggle {
+    width: 100%;
+    justify-content: center;
+  }
+}
 </style>
 

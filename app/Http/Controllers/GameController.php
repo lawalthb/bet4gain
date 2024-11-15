@@ -47,4 +47,40 @@ class GameController extends Controller
 
         return response()->json($bet);
     }
+
+    public function processBetResults($gameId, $crashPoint)
+    {
+        $bets = Bet::where('game_id', $gameId)
+            ->where('status', 'pending')
+            ->get();
+
+        foreach ($bets as $bet) {
+            if ($bet->cashout_multiplier && $bet->cashout_multiplier <= $crashPoint) {
+                // Win
+                $winAmount = $bet->amount * $bet->cashout_multiplier;
+                $profit = $winAmount - $bet->amount;
+
+                $bet->update([
+                    'status' => 'won',
+                    'profit' => $profit
+                ]);
+
+                if (!$bet->is_demo) {
+                    $bet->user->increment('wallet_balance', $winAmount);
+                }
+            } else {
+                // Loss
+                $bet->update([
+                    'status' => 'lost',
+                    'profit' => -$bet->amount
+                ]);
+            }
+        }
+
+        return [
+            'total_bets' => $bets->count(),
+            'winners' => $bets->where('status', 'won')->count(),
+            'total_profit' => $bets->sum('profit')
+        ];
+    }
 }
