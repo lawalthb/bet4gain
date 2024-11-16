@@ -7,14 +7,27 @@ use App\Services\BettingService;
 use App\Models\Bet;
 use App\Models\Game;
 use Illuminate\Http\Request;
+use Pusher\Pusher;
 
 class BetController extends Controller
 {
     protected $bettingService;
-
+    private $pusher;
     public function __construct(BettingService $bettingService)
     {
         $this->bettingService = $bettingService;
+
+        $this->pusher = new Pusher(
+            '87892ed076b91483ee2a',
+            '1043bfa797b5c0b09de5',
+            '1769030',
+            [
+                'cluster' => 'mt1',
+                'useTLS' => true
+            ]
+        );
+
+        
     }
 
     public function placeBet(PlaceBetRequest $request)
@@ -48,6 +61,12 @@ class BetController extends Controller
         try {
             $bet = Bet::findOrFail($request->bet_id);
             $winAmount = $this->bettingService->processCashout($bet, $request->crash_point);
+
+
+            $this->pusher->trigger('game', 'LeaderboardUpdated', []);
+
+            $this->pusher->trigger('game', 'GameHistoryUpdated', []);
+
 
             return response()->json([
                 'success' => true,

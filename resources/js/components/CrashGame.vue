@@ -32,7 +32,9 @@
     </div>
     <div class="game-canvas" ref="gameCanvas">
       <div class="flight-path" ref="flightPath"></div>
-      <div class="airplane" ref="airplane"><img src="/resources/img/rocket3.png" style="height: 100px;" /> </div>
+     <div class="rocket-container" ref="airplane" :style="rocketStyle">
+      <img src="/resources/img/rocket3.png" alt="rocket" />
+    </div>
       <div class="multiplier" :class="{ 'crashed': hasCrashed }">
         {{ currentMultiplier.toFixed(2) }}x
       </div>
@@ -125,7 +127,8 @@ export default {
       let flightAnimation = null
       const currentGameId = ref(null)
       const currentBetId = ref(null)
-    const notifications = ref([])
+      const notifications = ref([])
+
 
     const isLoggedIn = ref(window.auth.isLoggedIn)
     const userBalance = ref(window.auth.user ? window.auth.user.wallet_balance : 0)
@@ -194,13 +197,21 @@ export default {
       hasCrashed.value = false
       currentMultiplier.value = 1.00
 
-      gsap.set(airplane.value, {
-        x: 0,
-        y: gameCanvas.value.clientHeight,
-        scale: 1,
-        opacity: 1,
-        rotation: 0
-      })
+
+       // Reset rocket state
+  rocketPosition.value = { x: 0, y: gameCanvas.value.clientHeight };
+  rocketRotation.value = -15;
+  rocketScale.value = 1;
+  rocketOpacity.value = 1;
+
+
+       // Initial animation
+  gsap.to(rocketPosition.value, {
+    x: 50,
+    y: gameCanvas.value.clientHeight - 100,
+    duration: 1,
+    ease: "power2.out"
+  });
 
       flightAnimation = gsap.to(airplane.value, {
         x: gameCanvas.value.clientWidth,
@@ -212,14 +223,24 @@ export default {
 
     const updateMultiplier = (multiplier) => {
       currentMultiplier.value = multiplier
-      const progress = (multiplier - 1) / 9
-        gsap.to(airplane.value, {
-            y: gameCanvas.value.clientHeight * (1 - progress),
-            duration: 0.1
-        });
+        const progress = (multiplier - 1) / 9;
+  const maxHeight = gameCanvas.value.clientHeight * 0.8;
+  const currentHeight = maxHeight * progress;
+
+gsap.to(rocketPosition.value, {
+    x: gameCanvas.value.clientWidth * (progress * 0.3),
+    y: gameCanvas.value.clientHeight - currentHeight,
+    duration: 0.2,
+    ease: "none"
+});
+    gsap.to(rocketRotation, {
+    value: -15 + (progress * 30),
+    duration: 0.2
+  });
        // Check for auto-cashout
   checkAutoCashout(multiplier);
     }
+
 
     const crashGame = (finalMultiplier) => {
       if (flightAnimation) flightAnimation.kill()
@@ -229,20 +250,48 @@ export default {
       crashPoint.value = finalMultiplier
       currentMultiplier.value = finalMultiplier
 
+       // Crash animation
+  gsap.to(rocketRotation, {
+    value: 90,
+    duration: 0.5,
+    ease: "power2.in"
+  });
+ gsap.to(rocketPosition.value, {
+    y: gameCanvas.value.clientHeight + 100,
+    x: rocketPosition.value.x + 50,
+    duration: 0.8,
+    ease: "power2.in"
+  });
+gsap.to(rocketScale, {
+    value: 0.5,
+    duration: 0.8
+  });
+  gsap.to(rocketOpacity, {
+    value: 0,
+    duration: 0.8,
+    onComplete: () => {
+      setTimeout(startCountdown, 3000);
+      if (hasActiveBet.value) {
+        handleGameCrash(finalMultiplier);
+      }
+    }
+  });
+
       if (gameCanvas.value && airplane.value) {
         const canvasHeight = gameCanvas.value.offsetHeight || 400
 
         gsap.to(airplane.value, {
-          rotation: 90,
-          y: canvasHeight,
-          scale: 0.5,
-          opacity: 0,
-          duration: 0.5,
-          ease: "power2.in",
-          onComplete: () => {
-            setTimeout(() => {
-              startCountdown()
-            }, 3000)
+      rotation: 90,
+      y: canvasHeight + 100, // Move below canvas
+      x: `+=${50}`, // Slight horizontal movement
+      scale: 0.5,
+      opacity: 0,
+      duration: 0.8,
+      ease: "power2.in",
+      onComplete: () => {
+        setTimeout(() => {
+          startCountdown();
+        }, 3000);
               if (hasActiveBet.value) {
                 // Update lost status in database
         axios.post('/game/crash', {
@@ -254,7 +303,11 @@ export default {
                 loadUserBalance();
             }
         });
-        
+
+
+
+
+
                   showLoseNotification(betAmount.value);
               hasActiveBet.value = false
               canCashOut.value = false
@@ -299,7 +352,13 @@ export default {
     const crashPoint = ref(0)
       const countdown = ref(5)
 
-const notificationTimeout = ref(null)
+      const notificationTimeout = ref(null)
+// Updated animation refs
+const rocketPosition = ref({ x: 0, y: 0 })
+const rocketRotation = ref(-15)
+const rocketScale = ref(1)
+const rocketOpacity = ref(1)
+const animationInProgress = ref(false)
 
     // const placeBet = () => {
     //   if (betAmount.value <= userBalance.value) {
@@ -442,6 +501,13 @@ const showLoseNotification = (amount) => {
     const betMax = () => {
       betAmount.value = userBalance.value
     }
+const rocketStyle = computed(() => ({
+  transform: `translate(${rocketPosition.value.x}px, ${rocketPosition.value.y}px)
+              rotate(${rocketRotation.value}deg)
+              scale(${rocketScale.value})`,
+  opacity: rocketOpacity.value
+}))
+
 
     return {
       gameCanvas,
@@ -476,7 +542,13 @@ const showLoseNotification = (amount) => {
      notifications,
         notificationTimeout,
   showWinNotification,
-  showLoseNotification
+        showLoseNotification,
+   rocketStyle,
+  rocketPosition,
+  rocketRotation,
+  rocketScale,
+  rocketOpacity,
+  animationInProgress,
     }
   }
 }
@@ -767,5 +839,21 @@ button:disabled {
     transform: translateY(-20px);
   }
 }
+
+
+.rocket-container {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  will-change: transform;
+}
+
+.rocket-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+
 </style>
 

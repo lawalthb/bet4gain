@@ -104,7 +104,13 @@ export default {
 
 
     onMounted(() => {
-      fetchHistory();
+        fetchHistory();
+        window.Echo.channel('game')
+            .listen('.GameHistoryUpdated', (e) => {
+                   fetchHistory();
+                gameHistory.value = e.gameHistory;
+            });
+
     });
 
       return {

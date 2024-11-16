@@ -6,9 +6,27 @@ use App\Models\Bet;
 use App\Models\Game;
 use App\Models\User;
 use App\Models\Bot;
+use Pusher\Pusher;
 
 class BettingService
 {
+    private $pusher;
+
+    public function __construct()
+    {
+        $this->pusher = new Pusher(
+            '87892ed076b91483ee2a',
+            '1043bfa797b5c0b09de5',
+            '1769030',
+            [
+                'cluster' => 'mt1',
+                'useTLS' => true
+            ]
+        );
+
+    }
+
+
     public function placeBet($data, $user = null)
     {
         $game = Game::findOrFail($data['game_id']);
@@ -22,6 +40,11 @@ class BettingService
             $user->save();
         }
 
+            $this->pusher->trigger('game', 'LeaderboardUpdated', [
+        ]);
+
+        $this->pusher->trigger('game', 'GameHistoryUpdated', [
+        ]);
         return Bet::create([
             'game_id' => $game->id,
             'user_id' => $user ? $user->id : null,

@@ -75,6 +75,9 @@ class GameController extends Controller
                     'profit' => -$bet->amount
                 ]);
             }
+            // event(new GameHistoryUpdated($this->getHistory()));
+            // event(new LeaderboardUpdated($this->getLeaders('daily')));
+
         }
 
         return [

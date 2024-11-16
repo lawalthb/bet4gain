@@ -111,6 +111,13 @@ class GameService
             $this->pusher->trigger('game', 'GameCrashed', [
                 'crash_point' => $game->crash_point
             ]);
+
+            $this->pusher->trigger('game', 'LeaderboardUpdated', []);
+
+            $this->pusher->trigger('game', 'GameHistoryUpdated', []);
+
+
+            
         } catch (\Exception $e) {
             Log::error('Error crashing game', [
                 'game_id' => $game->id,

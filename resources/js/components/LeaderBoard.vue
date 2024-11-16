@@ -49,7 +49,13 @@ export default {
     })
 
     onMounted(() => {
-      fetchLeaders()
+        fetchLeaders();
+      window.Echo.channel('game')
+
+          .listen('.LeaderboardUpdated', (e) => {
+          fetchLeaders()
+        leaders.value = e.leaders;
+    });
     })
 
     return {
