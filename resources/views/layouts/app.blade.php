@@ -4,14 +4,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crash Game</title>
+    <title>Bet4Gain</title>
+   <link rel="icon" href="{{ asset('assets/images/favicon.png') }}" type="image/x-icon">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        .bg-gradient-text {
+            background-size: 200% auto;
+            animation: shine 3s linear infinite;
+        }
+
+        @keyframes shine {
+            to {
+                background-position: 200% center;
+            }
+        }
+    </style>
 </head>
 
 <body class="bg-gray-900 text-white">
+    <x-preloader />
     <nav class="bg-gray-800 p-4">
         <div class="container mx-auto flex justify-between items-center">
-            <a href="/" class="text-xl font-bold">Crash Game</a>
+            <a href="/" class="text-xl font-bold relative">
+                <span class="bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-blue-500 to-purple-500 hover:from-pink-500 hover:via-yellow-500 hover:to-green-500 transition-all duration-300">
+                 <img src="{{ asset('assets/images/favicon.png') }}" alt="Bet4Gain" class="w-10 h-10 inline-block mr-2"> Bet4Gain
+                </span>
+            </a>
             <div class="flex items-center space-x-4">
                 @auth
 

@@ -21,5 +21,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Blade::component('components.footer', 'footer');
+        Blade::component('components.preloader', 'preloader');
     }
 }
