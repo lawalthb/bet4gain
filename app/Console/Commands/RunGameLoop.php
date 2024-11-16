@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Services\GameService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
+
 class RunGameLoop extends Command
 {
     protected $signature = 'game:run';
@@ -34,11 +35,10 @@ class RunGameLoop extends Command
             $this->info('Game crashed!');
 
             // 5 second countdown
-            for ($i = 8; $i > 0; $i--) {
+            for ($i = 7; $i > 0; $i--) {
                 $this->info("Next game in {$i}...");
                 sleep(1);
             }
         }
     }
-
 }

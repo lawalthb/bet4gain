@@ -42,7 +42,7 @@
 
 
      <div class="rocket-container" ref="airplane" :style="rocketStyle">
-      <img src="/resources/img/rocket3.png" alt="rocket" />
+      <img src="/resources/img/rocket223.png" alt="rocket" />
     </div>
       <div class="multiplier" :class="{ 'crashed': hasCrashed }">
         {{ currentMultiplier.toFixed(2) }}x
@@ -140,7 +140,7 @@ export default {
       const currentBetId = ref(null)
       const notifications = ref([])
       const botsCount = ref(3) // Number of active bots
-const botBets = ref([]) // Track bot bets
+    const botBets = ref([]) // Track bot bets
 
 
     const isLoggedIn = ref(window.auth.isLoggedIn)
@@ -212,26 +212,16 @@ const botBets = ref([]) // Track bot bets
 
         handleBotBets();
        // Reset rocket state
-  rocketPosition.value = { x: 0, y: gameCanvas.value.clientHeight };
+  // Set initial rocket position at bottom center
+  rocketPosition.value = {
+    x: 50,
+    y: gameCanvas.value.clientHeight - 100
+  };
   rocketRotation.value = -15;
   rocketScale.value = 1;
   rocketOpacity.value = 1;
 
 
-       // Initial animation
-  gsap.to(rocketPosition.value, {
-    x: 50,
-    y: gameCanvas.value.clientHeight - 100,
-    duration: 1,
-    ease: "power2.out"
-  });
-
-      flightAnimation = gsap.to(airplane.value, {
-        x: gameCanvas.value.clientWidth,
-        y: 0,
-        ease: "power1.in",
-        duration: 15
-      })
     }
 
     const updateMultiplier = (multiplier) => {
@@ -264,7 +254,7 @@ gsap.to(rocketPosition.value, {
       hasCrashed.value = true
       crashPoint.value = finalMultiplier
       currentMultiplier.value = finalMultiplier
-
+const canvasHeight = gameCanvas.value.clientHeight || 400;
        // Crash animation
   gsap.to(rocketRotation, {
     value: 90,
@@ -272,7 +262,7 @@ gsap.to(rocketPosition.value, {
     ease: "power2.in"
   });
  gsap.to(rocketPosition.value, {
-    y: gameCanvas.value.clientHeight + 100,
+     y: canvasHeight + 100,
     x: rocketPosition.value.x + 50,
     duration: 0.8,
     ease: "power2.in"
@@ -288,7 +278,7 @@ gsap.to(rocketScale, {
       setTimeout(startCountdown, 3000);
       if (hasActiveBet.value) {
         handleGameCrash(finalMultiplier);
-       
+
       }
     }
   });
@@ -665,15 +655,51 @@ const rocketStyle = computed(() => ({
 .high-crash {
   color: #4CAF50;
 }
-
 .game-canvas {
   position: relative;
   width: 100%;
   height: 400px;
-  background: linear-gradient(to bottom, #1a1a2e, #16213e);
+  /* Option 1: Modern gradient with deep space feel */
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f172a 100%);
+
+  /* Option 2: Animated gradient background */
+  background: linear-gradient(-45deg, #1a1a2e, #16213e, #0f172a, #1e293b);
+  background-size: 400% 400%;
+  animation: gradientBG 15s ease infinite;
+
+  /* Option 3: Starry night effect */
+  background: radial-gradient(circle at center, #1a1a2e 0%, #16213e 100%);
+  box-shadow: inset 0 0 50px rgba(255,255,255,0.1);
+
   overflow: hidden;
 }
 
+/* For animated gradient */
+@keyframes gradientBG {
+  0% { background-position: 0% 50% }
+  50% { background-position: 100% 50% }
+  100% { background-position: 0% 50% }
+}
+
+.game-canvas::before {
+  content: '';
+  position: absolute;
+  width: 200%;
+  height: 100%;
+  background-image: radial-gradient(white 1px, transparent 1px);
+  background-size: 50px 50px;
+  opacity: 0.1;
+  animation: moveStars 15s linear infinite;
+}
+
+@keyframes moveStars {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
 .airplane {
   position: absolute;
   bottom: 0;
