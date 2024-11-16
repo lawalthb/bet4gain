@@ -88,3 +88,6 @@ Route::get('/game/{gameId}/stats', [BetController::class, 'getGameStats'])->name
 Route::post('/bet/demo', [BetController::class, 'placeBet'])->name('bet.demo');
 
 Route::get('/leaderboard/{timeFrame}', [LeaderboardController::class, 'getLeaders']);
+
+
+Route::post('/game/crash', [GameController::class, 'handleGameCrash'])->name('game.crash');

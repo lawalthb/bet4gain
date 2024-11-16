@@ -304,10 +304,6 @@ gsap.to(rocketScale, {
             }
         });
 
-
-
-
-
                   showLoseNotification(betAmount.value);
               hasActiveBet.value = false
               canCashOut.value = false
@@ -453,15 +449,31 @@ const cashOut = async () => {
 
 const handleGameCrash = (crashPoint) => {
   if (hasActiveBet.value) {
+  // Handle demo loss
     if (!isLoggedIn.value) {
-      // Demo loss
       showLoseNotification(betAmount.value);
+      hasActiveBet.value = false;
+      canCashOut.value = false;
+      activePlayers.value--;
+      return;
     }
-    hasActiveBet.value = false;
-    canCashOut.value = false;
-    activePlayers.value--;
+ // Handle real money loss
+    axios.post('/game/crash', {
+      bet_id: currentBetId.value,
+      game_id: currentGameId.value,
+      crash_point: crashPoint
+    }).then(() => {
+      if (isLoggedIn.value) {
+        loadUserBalance();
+      }
+     // showLoseNotification(betAmount.value);
+      hasActiveBet.value = false;
+      canCashOut.value = false;
+      activePlayers.value--;
+    });
   }
 };
+
 
 const showWinNotification = (amount) => {
   notifications.value.push({
