@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BetController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\LeaderboardController;
+use App\Http\Controllers\SpinGameController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\WalletController;
 use Illuminate\Support\Facades\Auth;
@@ -91,3 +92,15 @@ Route::get('/leaderboard/{timeFrame}', [LeaderboardController::class, 'getLeader
 
 
 Route::post('/game/crash', [GameController::class, 'handleGameCrash'])->name('game.crash');
+
+
+Route::middleware(['auth'])->group(function () {
+    Route::post('/spin/start', [SpinGameController::class, 'start']);
+    Route::post('/spin/bet', [SpinGameController::class, 'placeBet']);
+    Route::post('/spin/{game}/spin', [SpinGameController::class, 'spin']);
+});
+
+
+Route::get('/spin', function () {
+    return view('spin');
+})->name('spin');
