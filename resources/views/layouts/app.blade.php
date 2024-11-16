@@ -14,7 +14,7 @@
             <a href="/" class="text-xl font-bold">Crash Game</a>
             <div class="flex items-center space-x-4">
                 @auth
-            
+
                 <a href="{{ route('wallet') }}" class="hover:text-gray-300">Wallet</a>
                 <form method="POST" action="{{ route('logout') }}" class="inline">
                     @csrf
@@ -34,6 +34,9 @@
 
     <main class="container mx-auto py-6">
         @yield('content')
+
+
+        <x-footer />
     </main>
 </body>
 
@@ -43,7 +46,7 @@
 
 <script>
     window.auth = {
-        user: @json(auth()->user()),
-        isLoggedIn: @json(auth()->check())
+        user: @json(auth() -> user()),
+        isLoggedIn: @json(auth() -> check())
     }
 </script>

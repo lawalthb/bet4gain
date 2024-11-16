@@ -32,6 +32,15 @@
     </div>
     <div class="game-canvas" ref="gameCanvas">
       <div class="flight-path" ref="flightPath"></div>
+
+    <div class="active-bets" v-if="botBets.length > 0">
+        <div v-for="bot in botBets" :key="bot.id" class="bot-bet">
+            <span class="bot-name">{{ bot.name }}</span>
+            <span class="bot-amount">₦{{ bot.amount }}</span>
+        </div>
+    </div>
+
+
      <div class="rocket-container" ref="airplane" :style="rocketStyle">
       <img src="/resources/img/rocket3.png" alt="rocket" />
     </div>
@@ -108,13 +117,15 @@
           Cash Out ({{ (betAmount * currentMultiplier).toFixed(2) }})
         </button>
       </div>
+
     </div>
   </div>
 </template>
 
 <script>
 import { ref, onMounted, onUnmounted , computed} from 'vue'
-import gsap from 'gsap'
+import gsap from 'gsap';
+import botNames from '../data/botNames.json';
 
 export default {
   name: 'CrashGame',
@@ -128,6 +139,8 @@ export default {
       const currentGameId = ref(null)
       const currentBetId = ref(null)
       const notifications = ref([])
+      const botsCount = ref(3) // Number of active bots
+const botBets = ref([]) // Track bot bets
 
 
     const isLoggedIn = ref(window.auth.isLoggedIn)
@@ -197,7 +210,7 @@ export default {
       hasCrashed.value = false
       currentMultiplier.value = 1.00
 
-
+        handleBotBets();
        // Reset rocket state
   rocketPosition.value = { x: 0, y: gameCanvas.value.clientHeight };
   rocketRotation.value = -15;
@@ -226,6 +239,8 @@ export default {
         const progress = (multiplier - 1) / 9;
   const maxHeight = gameCanvas.value.clientHeight * 0.8;
   const currentHeight = maxHeight * progress;
+        handleBotCashouts(multiplier);
+
 
 gsap.to(rocketPosition.value, {
     x: gameCanvas.value.clientWidth * (progress * 0.3),
@@ -273,6 +288,7 @@ gsap.to(rocketScale, {
       setTimeout(startCountdown, 3000);
       if (hasActiveBet.value) {
         handleGameCrash(finalMultiplier);
+       
       }
     }
   });
@@ -448,7 +464,7 @@ const cashOut = async () => {
 };
 
 const handleGameCrash = (crashPoint) => {
-  if (hasActiveBet.value) {
+  if (hasActiveBet.value && !canCashOut.value) {
   // Handle demo loss
     if (!isLoggedIn.value) {
       showLoseNotification(betAmount.value);
@@ -485,6 +501,40 @@ const showWinNotification = (amount) => {
     notifications.value.shift();
   }, 3000);
 };
+
+// Add this function to handle bot betting
+const handleBotBets = () => {
+  // Clear previous bot bets
+  botBets.value = []
+
+  // Generate random number of bots that will bet (1-3)
+  const activeBots = Math.floor(Math.random() * botsCount.value) + 1
+
+  for (let i = 0; i < activeBots; i++) {
+    const botBet = {
+      id: `bot-${i}`,
+      name: `Player${Math.floor(Math.random() * 1000)}`,
+      amount: Math.floor(Math.random() * 90) + 10, // Random bet 10-100
+      autoCashout: (Math.random() * 3 + 1.2).toFixed(2) // Random cashout 1.2-4.2x
+    }
+
+    botBets.value.push(botBet)
+    activePlayers.value++
+    totalBets.value += botBet.amount
+  }
+}
+
+// Add bot cashout logic
+const handleBotCashouts = (multiplier) => {
+  botBets.value.forEach((bot, index) => {
+    if (multiplier >= bot.autoCashout) {
+      // Bot cashes out
+      activePlayers.value--
+      botBets.value.splice(index, 1)
+    }
+  })
+}
+
 
 const showLoseNotification = (amount) => {
   notifications.value.push({
@@ -560,7 +610,11 @@ const rocketStyle = computed(() => ({
   rocketRotation,
   rocketScale,
   rocketOpacity,
-  animationInProgress,
+        animationInProgress,
+  botsCount,
+  botBets,
+  handleBotBets,
+  handleBotCashouts
     }
   }
 }
@@ -866,6 +920,26 @@ button:disabled {
   object-fit: contain;
 }
 
+
+.active-bets {
+  position: absolute;
+  left: 20px;
+  top: 20px;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.bot-bet {
+  color: white;
+  margin: 5px 0;
+  font-size: 14px;
+}
+
+.bot-name {
+  color: #4CAF50;
+  margin-right: 10px;
+}
 
 </style>
 

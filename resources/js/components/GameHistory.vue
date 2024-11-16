@@ -16,7 +16,7 @@
         <thead>
           <tr>
             <th>Time</th>
-            <th>Bet Amount</th>
+            <th>Bet Amt</th>
             <th>Multiplier</th>
             <th>Profit/Loss</th>
             <th>Status</th>
@@ -172,7 +172,7 @@ th, td {
 
 th {
   background: #222;
-  font-weight: 600;
+  font-weight: 400;
 }
 
 .high-multiplier {
