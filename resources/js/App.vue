@@ -40,35 +40,34 @@ export default {
 </script>
 
 <style scoped>
-.game-switcher {
-  width: 100%;
-  max-width: 800px;
-  margin: 0 auto;
-}
-
 .game-tabs {
   display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: 8px;
+  margin-bottom: 15px;
+  justify-content: flex-end; /* Align to right */
 }
 
 .tab-button {
-  padding: 12px 24px;
-  background: #333;
-  color: white;
+  padding: 8px 16px;
+  background: rgba(51, 51, 51, 0.8);
+  color: #888;
   border: none;
-  border-radius: 8px;
+  border-radius: 4px;
   cursor: pointer;
   transition: all 0.3s ease;
+  font-size: 14px;
 }
 
 .tab-button.active {
   background: #4CAF50;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2);
 }
 
 .tab-button:hover:not(.active) {
   background: #444;
+  color: #aaa;
 }
+
 </style>

@@ -24,6 +24,8 @@
           <button type="submit" class="btn-submit">Pay with Paystack</button>
           <button @click="showDepositForm = false" class="btn-cancel">Cancel</button>
         </form>
+        <img src="payment_img.png" alt="Paystack Logo" class="paystack-logo">
+
       </div>
     </div>
 
