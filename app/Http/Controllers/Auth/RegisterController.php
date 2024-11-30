@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -70,12 +71,12 @@ class RegisterController extends Controller
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'phone_number' => $data['phone_number'],
-
             'referral_code' => $this->generateReferralCode(),
             'is_active' => 'Yes',
             'is_ban' => 'No',
             'user_role_id' => 2,
         ]);
+        event(new Registered($user));
     }
 
 
@@ -87,7 +88,4 @@ class RegisterController extends Controller
 
         return strtoupper($code);
     }
-
-
-
 }

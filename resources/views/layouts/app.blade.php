@@ -61,7 +61,7 @@
                 <div class="hidden md:flex items-center space-x-4 justify-end">
                     @auth
                     <a href="{{ route('wallet') }}" class="hover:text-gray-300">Wallet</a>
-                    <a href="{{ route('spin') }}" class="hover:text-gray-300">Spin Wheel</a>
+                    
                     <form method="POST" action="{{ route('logout') }}" class="inline">
                         @csrf
                         <button type="submit" class="hover:text-gray-300">Logout</button>
@@ -86,7 +86,7 @@
                 <div class="flex flex-col space-y-4 py-4">
                     @auth
                     <a href="{{ route('wallet') }}" class="hover:text-gray-300">Wallet</a>
-                    <a href="{{ route('spin') }}" class="hover:text-gray-300">Spin Wheel</a>
+
                     <form method="POST" action="{{ route('logout') }}" class="inline">
                         @csrf
                         <button type="submit" class="hover:text-gray-300">Logout</button>

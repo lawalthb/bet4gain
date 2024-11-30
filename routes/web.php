@@ -25,10 +25,10 @@ Route::middleware('guest')->group(function () {
 });
 
 // Authenticated routes
-Route::middleware('auth')->group(function () {
+
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-    Route::middleware(['auth'])->group(function () {
+    Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/deposit', [TransactionController::class, 'initiateDeposit']);
         Route::post('/withdraw', [TransactionController::class, 'initiateWithdrawal']);
         Route::post('/bonus/{user}', [TransactionController::class, 'giveBonus'])->middleware('admin');
@@ -36,7 +36,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/wallet', [WalletController::class, 'show'])->name('wallet');
         Route::post('/deposit', [WalletController::class, 'deposit'])->name('deposit');
         Route::post('/withdraw', [WalletController::class, 'initiatewithdraw'])->name('withdraw');
-    });
+
 
     // Game routes
     Route::post('/bet', [GameController::class, 'placeBet'])->name('bet');
