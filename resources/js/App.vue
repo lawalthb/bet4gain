@@ -1,15 +1,28 @@
 <template>
   <div class="game-switcher">
-    <div class="game-tabs">
+    <!-- Game Icon Trigger -->
+    <div class="game-icon" @click="toggleDrawer" title="More games">
+   <!-- Dice Icon -->
+<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+  <circle cx="8.5" cy="14.5" r="1.5"/>
+  <circle cx="15.5" cy="14.5" r="1.5"/>
+  <circle cx="12" cy="17.5" r="1.5"/>
+</svg>
+
+    </div>
+
+    <!-- Drawer Menu -->
+    <div class="game-tabs" :class="{ 'drawer-open': isDrawerOpen }">
       <button
-        @click="activeGame = 'crash'"
+        @click="selectGame('crash')"
         :class="{ active: activeGame === 'crash' }"
         class="tab-button"
       >
         Crash Game
       </button>
       <button
-        @click="activeGame = 'spin'"
+        @click="selectGame('spin')"
         :class="{ active: activeGame === 'spin' }"
         class="tab-button"
       >
@@ -34,40 +47,88 @@ export default {
   },
   setup() {
     const activeGame = ref('crash')
-    return { activeGame }
+    const isDrawerOpen = ref(false)
+
+    const toggleDrawer = () => {
+      isDrawerOpen.value = !isDrawerOpen.value
+    }
+
+    const selectGame = (game) => {
+      activeGame.value = game
+      isDrawerOpen.value = false
+    }
+
+    return {
+      activeGame,
+      isDrawerOpen,
+      toggleDrawer,
+      selectGame
+    }
   }
 }
 </script>
 
 <style scoped>
-.game-tabs {
+.game-switcher {
   display: flex;
-  gap: 8px;
-  margin-bottom: 15px;
-  justify-content: flex-end; /* Align to right */
+  gap: 20px;
+  position:relative
+}
+
+.game-icon {
+  position: fixed;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  padding: 10px;
+  background: #333;
+  border-radius: 0 8px 8px 0;
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.game-icon:hover {
+  background: #444;
+}
+
+.game-tabs {
+  position: fixed;
+  left: -200px;
+  top: 50%;
+  transform: translateY(-50%);
+  transition: all 0.3s ease;
+  background: #1a1a1a;
+  padding: 20px;
+  border-radius: 0 8px 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 999;
+}
+
+.drawer-open {
+  left: 0;
 }
 
 .tab-button {
-  padding: 8px 16px;
-  background: rgba(51, 51, 51, 0.8);
-  color: #888;
+  padding: 12px 24px;
+  background: #333;
+  color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-size: 14px;
+  white-space: nowrap;
 }
 
 .tab-button.active {
   background: #4CAF50;
-  color: white;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2);
+  transform: translateX(2px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
 }
 
 .tab-button:hover:not(.active) {
   background: #444;
-  color: #aaa;
 }
-
 </style>

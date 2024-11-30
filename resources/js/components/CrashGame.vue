@@ -1,20 +1,37 @@
 <template>
   <div class="crash-game">
-    <div class="game-stats">
-      <div class="current-stats">
-        <span>Players: {{ activePlayers }}</span>
-        <span>Total Bets: ₦{{ totalBets }}</span>
-        <span v-if="isLoggedIn">Balance: ₦{{ userBalance }}</span>
-        <span v-else>Balance: ₦{{ demoBalance.toFixed(2) }}</span>
-      </div>
-      <div class="previous-crashes">
-        <span v-for="(crash, index) in previousCrashes"
-              :key="index"
-              :class="{ 'high-crash': crash > 2 }">
-          {{ crash.toFixed(2) }}x
-        </span>
-      </div>
+   <div class="game-stats bg-gray-800 rounded-lg p-4 shadow-lg">
+  <div class="current-stats grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="stat-card bg-gray-700 p-3 rounded-lg">
+      <div class="text-gray-400 text-sm">Players</div>
+      <div class="text-xl font-bold">{{ activePlayers }}</div>
     </div>
+
+    <div class="stat-card bg-gray-700 p-3 rounded-lg">
+      <div class="text-gray-400 text-sm">Total Bets</div>
+      <div class="text-xl font-bold">₦{{ totalBets }}</div>
+    </div>
+
+    <div class="stat-card bg-gray-700 p-3 rounded-lg">
+      <div class="text-gray-400 text-sm">Balance</div>
+      <div class="text-xl font-bold" v-if="isLoggedIn">₦{{ userBalance }}</div>
+      <div class="text-xl font-bold" v-else>₦{{ demoBalance.toFixed(2) }}</div>
+    </div>
+  </div>
+
+  <div class="previous-crashes mt-4 flex flex-wrap gap-2">
+    <span
+      v-for="(crash, index) in previousCrashes"
+      :key="index"
+      :class="{
+        'high-crash': crash > 2,
+        'bg-gray-700 px-3 py-1 rounded-full text-sm font-medium': true
+      }"
+    >
+      {{ crash.toFixed(2) }}x
+    </span>
+  </div>
+</div>
 <!-- Add this notification section -->
      <div class="notifications-wrapper">
       <div v-for="(notification, index) in notifications"
@@ -167,7 +184,13 @@ export default {
     }
   }
 };
-    onMounted(() => {
+      onMounted(() => {
+        if (window.innerWidth <= 768) {
+    const gameElement = document.querySelector('.crash-game');
+    if (gameElement) {
+      gameElement.scrollIntoView({ behavior: 'smooth' });
+    }
+  }
       window.Echo.channel('game')
         .listen('.GameStarted', (e) => {
           try {
@@ -630,7 +653,7 @@ const rocketStyle = computed(() => ({
 .game-stats {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 20px;
+  margin-bottom: 5px;
 
 }
 @media (max-width: 768px) {
@@ -641,7 +664,7 @@ const rocketStyle = computed(() => ({
   .current-stats {
     order: 1;
     display: flex;
-    gap: 10px;
+    gap: 5px;
     flex-wrap: wrap;
   }
 
@@ -650,8 +673,8 @@ const rocketStyle = computed(() => ({
   }
 }
 .previous-crashes span {
-  margin-left: 8px;
-  padding: 4px 8px;
+  margin-left: 5px;
+  padding: 2px 2px;
   background: #333;
   border-radius: 4px;
   font-size: 14px;
@@ -663,7 +686,7 @@ const rocketStyle = computed(() => ({
 .game-canvas {
   position: relative;
   width: 100%;
-  height: 400px;
+  height: 300px;
   /* Option 1: Modern gradient with deep space feel */
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f172a 100%);
 
@@ -952,8 +975,8 @@ button:disabled {
 
 .rocket-container {
   position: absolute;
-  width: 100px;
-  height: 100px;
+  width: 80px;
+  height: 80px;
   will-change: transform;
 }
 
@@ -983,6 +1006,18 @@ button:disabled {
   color: #4CAF50;
   margin-right: 10px;
 }
+.high-crash {
+  background: linear-gradient(45deg, #4CAF50, #45a049);
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+}
 
+.stat-card {
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
 </style>
 

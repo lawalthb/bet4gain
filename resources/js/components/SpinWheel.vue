@@ -98,54 +98,107 @@ export default {
 .spin-game {
   max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 10px;
 }
 
 .wheel-container {
-  width: 400px;
-  height: 400px;
-  margin: 50px auto;
+  width: 100%;
+  max-width: 400px;
+  height: auto;
+  aspect-ratio: 1;
+  margin: 20px auto;
   position: relative;
 }
 
 .wheel {
   width: 100%;
   height: 100%;
+  object-fit: contain;
 }
 
 .pointer {
   position: absolute;
-  top: -10px; /* Positioned at the bottom */
+  top: -10px;
   left: 50%;
   transform: translateX(-50%);
-  width: 0;           /* Width zero for triangle */
-  height: 0;          /* Height zero for triangle */
-  border-left: 10px solid transparent; /* Left side of triangle */
-  border-right: 10px solid transparent;/* Right side of triangle */
-  border-top: 20px solid white;      /* Top side of triangle (the pointer) */
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 20px solid white;
+  z-index: 10;
 }
+
 .betting-panel {
   margin-top: 20px;
-  padding: 20px;
+  padding: 15px;
   background: #333;
   border-radius: 8px;
 }
 
 .bet-options {
-  display: flex;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 8px;
   margin-bottom: 15px;
 }
 
 .bet-options button {
-  flex: 1;
-  padding: 15px;
+  width: 100%;
+  padding: 12px 8px;
   border: none;
   border-radius: 4px;
   font-weight: bold;
   cursor: pointer;
+  font-size: 14px;
 }
 
+.bet-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@media (min-width: 768px) {
+  .bet-controls {
+    flex-direction: row;
+  }
+
+  .wheel-container {
+    margin: 40px auto;
+  }
+
+  .betting-panel {
+    padding: 20px;
+  }
+
+  .bet-options button {
+    font-size: 16px;
+    padding: 15px;
+  }
+}
+
+.bet-controls input {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 4px;
+  background: #444;
+  color: white;
+}
+
+.bet-controls button {
+  width: 100%;
+  padding: 12px;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* Keep your existing color classes */
 .red { background: #e74c3c; }
 .black { background: #2c3e50; }
 .green { background: #27ae60; }
@@ -159,25 +212,9 @@ export default {
 .magenta { background: magenta; }
 .lime { background: lime; }
 
-.bet-controls {
-  display: flex;
-  gap: 10px;
-}
-
-.bet-controls input {
-  flex: 1;
-  padding: 10px;
-  border: none;
-  border-radius: 4px;
-}
-
-.bet-controls button {
-  padding: 10px 20px;
-  background: #3498db;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+.bet-options button.active {
+  transform: scale(0.95);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
 }
 
 .bet-controls button:disabled {
