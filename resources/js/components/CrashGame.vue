@@ -44,9 +44,14 @@
      <div class="rocket-container" ref="airplane" :style="rocketStyle">
       <img src="/resources/img/rocket223.png" alt="rocket" />
     </div>
-      <div class="multiplier" :class="{ 'crashed': hasCrashed }">
-        {{ currentMultiplier.toFixed(2) }}x
-      </div>
+     <div
+  v-show="isGameActive && !hasCrashed"
+  class="multiplier"
+  :class="{ 'crashed': hasCrashed }"
+>
+  {{ currentMultiplier.toFixed(2) }}x
+</div>
+
       <div v-if="!isGameActive && !hasCrashed" class="status">
         Starting in {{ countdown }}s
       </div>
@@ -716,16 +721,28 @@ const rocketStyle = computed(() => ({
 
 .multiplier {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  font-size: 48px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 64px;
   color: #4CAF50;
   font-weight: bold;
-  text-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+  text-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
+  z-index: 10;
+  transition: all 0.3s ease;
 }
+
 
 .multiplier.crashed {
   color: #f44336;
+  text-shadow: 0 0 15px rgba(244, 67, 54, 0.5);
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translate(-50%, -50%); }
+  25% { transform: translate(-52%, -50%); }
+  75% { transform: translate(-48%, -50%); }
 }
 
 .status, .crash-point {

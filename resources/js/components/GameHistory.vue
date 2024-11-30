@@ -41,26 +41,26 @@
         </tbody>
       </table>
       <div class="pagination">
-    <button
-      :disabled="currentPage === 1"
-      @click="changePage(currentPage - 1)"
-      class="page-btn"
-    >
-      Previous
-    </button>
+        <button
+          :disabled="currentPage === 1"
+          @click="changePage(currentPage - 1)"
+          class="page-btn"
+        >
+          Previous
+        </button>
 
-    <span class="page-info">
-      Page {{ currentPage }} of {{ totalPages }}
-    </span>
+        <span class="page-info">
+          Page {{ currentPage }} of {{ totalPages }}
+        </span>
 
-    <button
-      :disabled="currentPage === totalPages"
-      @click="changePage(currentPage + 1)"
-      class="page-btn"
-    >
-      Next
-    </button>
-  </div>
+        <button
+          :disabled="currentPage === totalPages"
+          @click="changePage(currentPage + 1)"
+          class="page-btn"
+        >
+          Next
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -72,13 +72,40 @@ export default {
   name: 'GameHistory',
 
   setup() {
-    const gameHistory = ref([]);
-      const filter = ref('all');
+
+     const generateRandomHistory = () => {
+      const history = [];
+      for (let i = 0; i < 10; i++) {
+        const crashPoint = (Math.random() * 5 + 1).toFixed(2);
+        const betAmount = Math.floor(Math.random() * 1000) + 100;
+        const profit = Math.random() > 0.5 ? betAmount * crashPoint - betAmount : -betAmount;
+
+        history.push({
+          id: i + 1,
+          created_at: new Date(Date.now() - i * 60000).toISOString(),
+          bet_amount: betAmount,
+          crash_point: parseFloat(crashPoint),
+          profit: parseFloat(profit.toFixed(2)),
+          status: profit > 0 ? 'won' : 'lost'
+        });
+      }
+      return history;
+    };
+
+
+
+    const filter = ref('all');
     const currentPage = ref(1);
     const totalPages = ref(1);
+    const gameHistory = ref(generateRandomHistory());
 
-   const fetchHistory = async (page = 1) => {
+
+
+
+      const fetchHistory = async (page = 1) => {
+
       try {
+      
         const response = await axios.get(`/game/history?page=${page}`);
         gameHistory.value = response.data.data;
         currentPage.value = response.data.current_page;
@@ -104,23 +131,23 @@ export default {
 
 
     onMounted(() => {
-        fetchHistory();
-        window.Echo.channel('game')
-            .listen('.GameHistoryUpdated', (e) => {
-                   fetchHistory();
-                gameHistory.value = e.gameHistory;
-            });
-
+      fetchHistory();
+      window.Echo.channel('game')
+        .listen('.GameHistoryUpdated', (e) => {
+          fetchHistory();
+          gameHistory.value = e.gameHistory;
+        });
     });
 
-      return {
-        currentPage,
+    return {
+      currentPage,
       totalPages,
       changePage,
       gameHistory,
       filter,
       filteredHistory,
-      formatTime
+        formatTime,
+
     };
   }
 }

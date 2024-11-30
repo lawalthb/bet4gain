@@ -11,9 +11,9 @@ createApp(PublicChat).mount('#chat');
 
 import GameHistory from './components/GameHistory.vue';
 
-createApp(GameHistory).mount('#game-history');
+createApp(GameHistory).mount('#history');
 
 
 import LeaderBoard from './components/LeaderBoard.vue';
 
-createApp(LeaderBoard).mount('#leader-board');
+createApp(LeaderBoard).mount('#leaderboard');
