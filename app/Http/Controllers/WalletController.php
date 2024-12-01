@@ -8,6 +8,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use App\Services\PaystackService;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 class WalletController extends Controller
 {
 
@@ -72,26 +74,59 @@ class WalletController extends Controller
     }
 
     public function withdraw(Request $request)
-    {
-        $validated = $request->validate([
-            'amount' => 'required|numeric|min:1'
+   {
+        $request->validate([
+            'amount' => 'required|numeric|min:1000',
+            'password' => 'required'
         ]);
 
-        $wallet = auth()->user()->wallet_balance;
+        $user = auth()->user();
 
-        if ($wallet->balance < $validated['amount']) {
-            return back()->with('error', 'Insufficient balance');
+        if (!Hash::check($request->password, $user->password)) {
+            return response()->json(['error' => 'Invalid password'], 422);
         }
 
-        $wallet->updateBalance(-$validated['amount']);
+        $amount = $request->amount;
+        $fee = $amount * 0.20; // 20% fee
+        $finalAmount = $amount - $fee;
 
-        Transaction::create([
-            'wallet_id' => $wallet->id,
-            'amount' => -$validated['amount'],
-            'type' => 'withdrawal',
-            'status' => 'pending'
-        ]);
+        if ($user->wallet_balance < $amount) {
+            return response()->json(['error' => 'Insufficient balance'], 422);
+        }
 
-        return back()->with('success', 'Withdrawal request submitted!');
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . config('services.paystack.secret_key'),
+                'Content-Type' => 'application/json',
+            ])->post('https://api.paystack.co/transfer', [
+                'source' => 'balance',
+                'amount' => $finalAmount * 100,
+                'recipient' => $user->recipient_code,
+                'reason' => 'Withdrawal from Bet4Gain'
+            ]);
+
+            if ($response->successful()) {
+                $user->decrement('wallet_balance', $amount);
+
+                Transaction::create([
+                    'user_id' => $user->id,
+                    'type' => 'withdrawal',
+                    'amount' => $amount,
+                    'fee' => $fee,
+                    'status' => 'completed',
+                    'reference' => $response['data']['reference']
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Withdrawal successful',
+                    'new_balance' => $user->wallet_balance
+                ]);
+            }
+
+            return response()->json(['error' => 'Transfer failed'], 500);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Transfer failed'], 500);
+        }
     }
 }

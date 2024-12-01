@@ -7,6 +7,7 @@
     </div>
 
     <!-- Action Buttons -->
+
     <div class="action-buttons">
       <button @click="showDepositForm = true" class="btn-deposit">Deposit</button>
       <button @click="showWithdrawForm = true" class="btn-withdraw">Withdraw</button>
@@ -18,13 +19,16 @@
         <h3>Deposit Funds</h3>
         <form @submit.prevent="initiateDeposit">
           <div class="form-group">
-            <label>Amount ($)</label>
+            <label>Amount (₦)</label>
             <input type="number" v-model="depositAmount" min="1" required>
           </div>
           <button type="submit" class="btn-submit">Pay with Paystack</button>
           <button @click="showDepositForm = false" class="btn-cancel">Cancel</button>
+
+
         </form>
-        <img src="payment_img.png" alt="Paystack Logo" class="paystack-logo">
+
+
 
       </div>
     </div>
@@ -35,7 +39,7 @@
         <h3>Withdraw Funds</h3>
         <form @submit.prevent="initiateWithdraw">
           <div class="form-group">
-            <label>Amount ($)</label>
+            <label>Amount (₦)</label>
             <input type="number" v-model="withdrawAmount" min="1" required>
           </div>
           <div class="fee-info">
@@ -62,7 +66,7 @@
 
     <!-- Transaction History -->
     <div class="transaction-history">
-      <h3>Transaction History</h3>
+      <h3>Transaction History55</h3>
       <table>
         <thead>
           <tr>
@@ -248,5 +252,11 @@ th, td {
 .btn-withdraw {
   background: #f44336;
   color: white;
+}
+.paystack-logo {
+    max-width: 200px;
+    height: auto;
+    margin: 20px auto;
+    display: block;
 }
 </style>

@@ -30,12 +30,12 @@ Route::middleware('guest')->group(function () {
 
     Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/deposit', [TransactionController::class, 'initiateDeposit']);
-        Route::post('/withdraw', [TransactionController::class, 'initiateWithdrawal']);
+        // Route::post('/withdraw', [TransactionController::class, 'initiateWithdrawal']);
         Route::post('/bonus/{user}', [TransactionController::class, 'giveBonus'])->middleware('admin');
 
         Route::get('/wallet', [WalletController::class, 'show'])->name('wallet');
         Route::post('/deposit', [WalletController::class, 'deposit'])->name('deposit');
-        Route::post('/withdraw', [WalletController::class, 'initiatewithdraw'])->name('withdraw');
+        Route::post('/withdraw', [WalletController::class, 'withdraw'])->name('withdraw');
 
 
     // Game routes
