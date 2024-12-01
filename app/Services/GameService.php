@@ -6,6 +6,7 @@ use App\Events\GameStarted;
 use App\Events\GameUpdated;
 use App\Events\GameCrashed;
 use App\Models\Game;
+use App\Models\GameSetting;
 use Illuminate\Support\Facades\Log;
 use Pusher\Pusher;
 
@@ -117,7 +118,7 @@ class GameService
             $this->pusher->trigger('game', 'GameHistoryUpdated', []);
 
 
-            
+
         } catch (\Exception $e) {
             Log::error('Error crashing game', [
                 'game_id' => $game->id,
@@ -130,7 +131,8 @@ class GameService
 
     private function generateCrashPoint()
     {
-        $crashPoint = mt_rand(100, 1000) / 100;
+        $maxMultiplier = GameSetting::first()->max_multiplier;
+        $crashPoint = mt_rand(100, $maxMultiplier * 100) / 100;
         Log::debug('Crash point generated', ['crash_point' => $crashPoint]);
         return $crashPoint;
     }
