@@ -3,9 +3,11 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BankAccountController;
 use App\Http\Controllers\BetController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\LeaderboardController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SpinGameController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\WalletController;
@@ -37,6 +39,11 @@ Route::middleware('guest')->group(function () {
         Route::post('/deposit', [WalletController::class, 'deposit'])->name('deposit');
         Route::post('/withdraw', [WalletController::class, 'withdraw'])->name('withdraw');
 
+    Route::get('/banks', [BankAccountController::class, 'getBanks']);
+    Route::post('/bank-account', [BankAccountController::class, 'createTransferRecipient']);
+
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
+    Route::post('/profile/update', [ProfileController::class, 'update']);
 
     // Game routes
     Route::post('/bet', [GameController::class, 'placeBet'])->name('bet');

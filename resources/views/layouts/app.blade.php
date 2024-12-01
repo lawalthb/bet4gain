@@ -61,12 +61,19 @@
                 <div class="hidden md:flex items-center space-x-4 justify-end">
                     @auth
                     <a href="{{ route('wallet') }}" class="hover:text-gray-300">Wallet</a>
-                    
+
                     <form method="POST" action="{{ route('logout') }}" class="inline">
                         @csrf
                         <button type="submit" class="hover:text-gray-300">Logout</button>
                     </form>
-                    <span>{{ auth()->user()->name }}</span>
+                    <span>
+                        <a href="{{ route('profile') }}" class="hover:text-green-400 transition-colors duration-200 flex items-center">
+                            {{ auth()->user()->name }}
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                        </a>
+                    </span>
                     @else
                     <a href="{{ route('login') }}" class="hover:text-gray-300">Login</a>
                     <a href="{{ route('register') }}" class="hover:text-gray-300">Register</a>
@@ -91,7 +98,14 @@
                         @csrf
                         <button type="submit" class="hover:text-gray-300">Logout</button>
                     </form>
-                    <span>{{ auth()->user()->name }}</span>
+                    <span>
+                        <a href="{{ route('profile') }}" class="hover:text-green-400 transition-colors duration-200 flex items-center">
+                            {{ auth()->user()->name }}
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                        </a>
+                    </span>
                     @else
                     <a href="{{ route('login') }}" class="hover:text-gray-300">Login</a>
                     <a href="{{ route('register') }}" class="hover:text-gray-300">Register</a>

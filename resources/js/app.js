@@ -17,3 +17,6 @@ createApp(GameHistory).mount('#history');
 import LeaderBoard from './components/LeaderBoard.vue';
 
 createApp(LeaderBoard).mount('#leaderboard');
+
+import Profile from './components/Profile.vue'
+createApp(Profile).mount('#profile');

@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 use App\Services\PaystackService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+
 class WalletController extends Controller
 {
 
@@ -74,7 +75,7 @@ class WalletController extends Controller
     }
 
     public function withdraw(Request $request)
-   {
+    {
         $request->validate([
             'amount' => 'required|numeric|min:1000',
             'password' => 'required'
@@ -82,12 +83,16 @@ class WalletController extends Controller
 
         $user = auth()->user();
 
+        if (!$user->recipient_code) {
+            return response()->json(['error' => 'Bank account not set up'], 422);
+        }
+
         if (!Hash::check($request->password, $user->password)) {
             return response()->json(['error' => 'Invalid password'], 422);
         }
 
         $amount = $request->amount;
-        $fee = $amount * 0.20; // 20% fee
+        $fee = $amount * 0.20;
         $finalAmount = $amount - $fee;
 
         if ($user->wallet_balance < $amount) {
@@ -100,18 +105,19 @@ class WalletController extends Controller
                 'Content-Type' => 'application/json',
             ])->post('https://api.paystack.co/transfer', [
                 'source' => 'balance',
-                'amount' => $finalAmount * 100,
+                'amount' => (int)($finalAmount * 100), // Convert to integer kobo
                 'recipient' => $user->recipient_code,
-                'reason' => 'Withdrawal from Bet4Gain'
+                'reason' => 'Withdrawal from Bet4Gain',
+                'currency' => 'NGN'
             ]);
 
-            if ($response->successful()) {
+            if ($response->successful() && $response->json()['status']) {
                 $user->decrement('wallet_balance', $amount);
 
                 Transaction::create([
                     'user_id' => $user->id,
-                    'type' => 'withdrawal',
-                    'amount' => $amount,
+                    'type' => 'Withdrawal',
+                    'amount' => -$amount,
                     'fee' => $fee,
                     'status' => 'completed',
                     'reference' => $response['data']['reference']
@@ -124,9 +130,12 @@ class WalletController extends Controller
                 ]);
             }
 
-            return response()->json(['error' => 'Transfer failed'], 500);
+            \Log::error('Paystack Transfer Error:', $response->json());
+            return response()->json(['error' => 'Transfer failed: ' . $response->json()['message']], 500);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Transfer failed'], 500);
+            \Log::error('Transfer Exception:', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Transfer service unavailable'], 500);
         }
     }
+
 }
