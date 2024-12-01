@@ -101,7 +101,7 @@ class WalletController extends Controller
 
         try {
             $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . config('services.paystack.secret_key'),
+                'Authorization' => 'Bearer sk_test_2238e369cfdbc08b694630835d0b8a4dfb05178e',
                 'Content-Type' => 'application/json',
             ])->post('https://api.paystack.co/transfer', [
                 'source' => 'balance',

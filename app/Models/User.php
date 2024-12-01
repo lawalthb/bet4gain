@@ -23,7 +23,11 @@ class User extends Authenticatable implements MustVerifyEmail
         'is_ban',
         'user_role_id',
         'wallet_balance',
-        'withdraw_pin'
+        'withdraw_pin',
+        'recipient_code',
+        'bank_name',
+        'account_number',
+        'account_name'
     ];
 
     protected $hidden = [

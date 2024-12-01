@@ -123,8 +123,8 @@
 
 <script>
     window.auth = {
-        user: @json(`auth() -> user()`),
-        isLoggedIn: @json(`auth() -> check()`)
+        user: @json(auth() -> user()),
+        isLoggedIn: @json(auth() -> check())
     }
 
     function toggleMenu() {
