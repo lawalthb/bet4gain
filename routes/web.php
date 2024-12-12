@@ -11,6 +11,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SpinGameController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\WalletController;
+use App\Models\Setting;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Broadcast;
 
@@ -28,16 +29,16 @@ Route::middleware('guest')->group(function () {
 
 // Authenticated routes
 
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-    Route::middleware(['auth', 'verified'])->group(function () {
-        Route::post('/deposit', [TransactionController::class, 'initiateDeposit']);
-        // Route::post('/withdraw', [TransactionController::class, 'initiateWithdrawal']);
-        Route::post('/bonus/{user}', [TransactionController::class, 'giveBonus'])->middleware('admin');
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::post('/deposit', [TransactionController::class, 'initiateDeposit']);
+    // Route::post('/withdraw', [TransactionController::class, 'initiateWithdrawal']);
+    Route::post('/bonus/{user}', [TransactionController::class, 'giveBonus'])->middleware('admin');
 
-        Route::get('/wallet', [WalletController::class, 'show'])->name('wallet');
-        Route::post('/deposit', [WalletController::class, 'deposit'])->name('deposit');
-        Route::post('/withdraw', [WalletController::class, 'withdraw'])->name('withdraw');
+    Route::get('/wallet', [WalletController::class, 'show'])->name('wallet');
+    Route::post('/deposit', [WalletController::class, 'deposit'])->name('deposit');
+    Route::post('/withdraw', [WalletController::class, 'withdraw'])->name('withdraw');
 
     Route::get('/banks', [BankAccountController::class, 'getBanks']);
     Route::post('/bank-account', [BankAccountController::class, 'createTransferRecipient']);
@@ -51,7 +52,8 @@ Route::middleware('guest')->group(function () {
 });
 
 // Public game data
-Route::get('/game/history', [GameController::class, 'getHistory'])->name('game.history');Route::get('/leaderboard', [GameController::class, 'leaderboard'])->name('leaderboard');
+Route::get('/game/history', [GameController::class, 'getHistory'])->name('game.history');
+Route::get('/leaderboard', [GameController::class, 'leaderboard'])->name('leaderboard');
 
 // WebSocket channels
 Broadcast::channel('game', function ($user) {
@@ -111,3 +113,12 @@ Route::middleware(['auth'])->group(function () {
 Route::get('/spin', function () {
     return view('spin');
 })->name('spin');
+
+
+
+Route::get('/settings/pusher', function () {
+    return response()->json([
+        'pusher_key' => Setting::get('pusher_key'),
+        'cluster' => Setting::get('pusher_cluster')
+    ]);
+});

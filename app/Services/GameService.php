@@ -2,26 +2,39 @@
 
 namespace App\Services;
 
-use App\Events\GameStarted;
-use App\Events\GameUpdated;
-use App\Events\GameCrashed;
-use App\Models\Game;
+use App\Models\Game as ModelsGame;
+use App\Services\Game;
 use App\Models\GameSetting;
 use Illuminate\Support\Facades\Log;
 use Pusher\Pusher;
-
+use App\Models\Setting;
 class GameService
 {
     private $pusher;
 
+    private $segments = [
+        ['color' => 'red', 'multiplier' => 2],
+        ['color' => 'black', 'multiplier' => 2],
+        ['color' => 'green', 'multiplier' => 14],
+        ['color' => 'yellow', 'multiplier' => 3],
+        ['color' => 'blue', 'multiplier' => 5],
+        ['color' => 'purple', 'multiplier' => 2],
+        ['color' => 'orange', 'multiplier' => 2],
+        ['color' => 'pink', 'multiplier' => 7],
+        ['color' => 'cyan', 'multiplier' => 2],
+        ['color' => 'brown', 'multiplier' => 2],
+        ['color' => 'magenta', 'multiplier' => 9],
+        ['color' => 'lime', 'multiplier' => 2]
+    ];
+
     public function __construct()
     {
         $this->pusher = new Pusher(
-            '87892ed076b91483ee2a',
-            '1043bfa797b5c0b09de5',
-            '1769030',
+            Setting::get('pusher_key'),
+            Setting::get('pusher_secret'),
+            Setting::get('pusher_app_id'),
             [
-                'cluster' => 'mt1',
+                'cluster' => Setting::get('pusher_cluster'),
                 'useTLS' => true
             ]
         );
@@ -31,7 +44,7 @@ class GameService
     public function startNewGame()
     {
         try {
-            $game = Game::create([
+            $game = ModelsGame::create([
                 'started_at' => now(),
                 'crash_point' => $this->generateCrashPoint(),
                 'is_completed' => false
@@ -136,4 +149,99 @@ class GameService
         Log::debug('Crash point generated', ['crash_point' => $crashPoint]);
         return $crashPoint;
     }
+
+
+    public function processBet($userId, $amount, $selectedColor)
+    {
+        return DB::transaction(function () use ($userId, $amount, $selectedColor) {
+            $user = User::findOrFail($userId);
+
+            // Verify user has sufficient balance
+            if ($user->wallet_balance < $amount) {
+                throw new \Exception('Insufficient balance');
+            }
+
+            // Deduct bet amount
+            $user->wallet_balance -= $amount;
+            $user->save();
+
+            // Create game record
+            $game = Game::create([
+                'user_id' => $userId,
+                'bet_amount' => $amount,
+                'selected_color' => $selectedColor,
+                'status' => 'pending'
+            ]);
+
+            // Generate result
+            $result = $this->spinWheel();
+
+            // Calculate winnings
+            $multiplier = $this->getMultiplier($result['color']);
+            $winAmount = $selectedColor === $result['color'] ? $amount * $multiplier : 0;
+
+            // Update user balance if won
+            if ($winAmount > 0) {
+                $user->wallet_balance += $winAmount;
+                $user->save();
+            }
+
+            // Record transaction
+            Transaction::create([
+                'user_id' => $userId,
+                'type' => 'game',
+                'amount' => $winAmount - $amount,
+                'reference' => 'SPIN-' . $game->id,
+                'status' => 'completed'
+            ]);
+
+            // Update game record
+            $game->update([
+                'result_color' => $result['color'],
+                'win_amount' => $winAmount,
+                'status' => 'completed'
+            ]);
+
+            return [
+                'success' => true,
+                'result' => $result,
+                'win_amount' => $winAmount
+            ];
+        });
+    }
+
+
+    private function spinWheel()
+    {
+        // Generate random result
+        $index = random_int(0, count($this->segments) - 1);
+        return $this->segments[$index];
+    }
+
+    private function getMultiplier($color)
+    {
+        foreach ($this->segments as $segment) {
+            if ($segment['color'] === $color) {
+                return $segment['multiplier'];
+            }
+        }
+        return 0;
+    }
+
+    public function getGameHistory($userId)
+    {
+        return Game::where('user_id', $userId)
+            ->orderBy('created_at', 'desc')
+            ->take(10)
+            ->get();
+    }
+
+    public function getLeaderboard()
+    {
+        return User::orderBy('wallet_balance', 'desc')
+        ->take(10)
+            ->get(['id', 'name', 'wallet_balance']);
+    }
+
+
 }

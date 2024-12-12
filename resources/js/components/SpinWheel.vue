@@ -1,7 +1,9 @@
 <template>
   <div class="spin-game">
     <div class="wheel-container">
-      <img src="/resources/img/wheel.png" alt="Wheel" class="wheel" ref="wheel">
+     <img src="/resources/img/wheel.png" alt="Wheel" class="wheel"
+     :class="{ stopped: isSpinning }"
+     ref="wheel">
       <div class="pointer"></div>
     </div>
 
@@ -25,6 +27,7 @@
 <script>
 import { ref, computed } from 'vue'
 import gsap from 'gsap'
+import Echo from 'laravel-echo'
 
 export default {
   name: 'SpinWheel',
@@ -48,38 +51,95 @@ export default {
       { color: 'lime', multiplier: 2 }
     ])
 
-    const spinWheel = (result) => {
-      isSpinning.value = true
-      const rotations = 5
-      const segmentAngle = 360 / segments.value.length
-      const targetAngle = calculateTargetAngle(result)
+//     const spinWheel = (result) => {
+//   isSpinning.value = true;
+//   const wheel = wheel.value;
 
-      gsap.to(wheel.value, {
-        rotation: `+=${rotations * 360 + targetAngle}`,
-        duration: 5,
-        ease: "power2.out",
-        onComplete: () => {
-          isSpinning.value = false
-        }
-      })
+//   // Get the current rotation
+//   const currentRotation = getComputedStyle(wheel).getPropertyValue('transform');
+//   wheel.style.transform = currentRotation;
+
+//   const rotations = 5;
+//   const segmentAngle = 360 / segments.value.length;
+//   const targetAngle = calculateTargetAngle(result);
+
+//   gsap.to(wheel, {
+//     rotation: `+=${rotations * 360 + targetAngle}`,
+//     duration: 5,
+//     ease: "power2.out",
+//     onComplete: () => {
+//       isSpinning.value = false;
+//       // Reset transform to allow continuous rotation to resume
+//       wheel.style.transform = '';
+//     }
+//   });
+// };
+// onMounted(() => {
+//       Echo.channel('game')
+//         .listen('GameSpinResult', (e) => {
+//           spinWheel(e.result)
+//         })
+//     })
+
+    const placeBet = async () => {
+  try {
+    const response = await axios.post('/spin/bet', {
+      amount: betAmount.value,
+      color: selectedColor.value
+    })
+
+    if(response.data.success) {
+      // Show betting confirmation
+      betAmount.value = 10 // Reset bet amount
+      selectedColor.value = null // Reset color selection
+
+      // Start wheel animation
+      isSpinning.value = true
     }
+  } catch (error) {
+    // Show error message to user
+    console.error('Betting error:', error)
+  }
+}
+
+const handleSpinResult = (result) => {
+  const winningSegment = segments.value.find(s => s.color === result)
+  const winAmount = betAmount.value * winningSegment.multiplier
+
+  // Show win/loss message
+  if(selectedColor.value === result) {
+    // User won
+    alert(`You won ${winAmount}!`)
+  } else {
+    // User lost
+    alert('Better luck next time!')
+  }
+}
+
+
+const spinWheel = (result) => {
+  isSpinning.value = true
+  const wheel = wheel.value
+
+  gsap.to(wheel, {
+    rotation: `+=${5 * 360 + calculateTargetAngle(result)}`,
+    duration: 5,
+    ease: "power2.out",
+    onComplete: () => {
+      isSpinning.value = false
+      handleSpinResult(result)
+      wheel.style.transform = ''
+    }
+  })
+}
+
 
     const calculateTargetAngle = (result) => {
       const segmentIndex = segments.value.findIndex(s => s.color === result)
       return segmentIndex * (360 / segments.value.length)
     }
 
-    const placeBet = async () => {
-      try {
-        const response = await axios.post('/spin/bet', {
-          amount: betAmount.value,
-          color: selectedColor.value
-        })
-        // Handle successful bet
-      } catch (error) {
-        console.error('Betting error:', error)
-      }
-    }
+
 
     const canBet = computed(() => selectedColor.value && betAmount.value > 0 && !isSpinning.value)
 
@@ -220,5 +280,28 @@ export default {
 .bet-controls button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Add this animation keyframe */
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Modify the .wheel class */
+.wheel {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  animation: rotate 10s linear infinite; /* Adjust speed by changing 10s */
+}
+
+/* Add this class for when wheel is stopped */
+.wheel.stopped {
+  animation: none;
 }
 </style>

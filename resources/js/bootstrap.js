@@ -20,13 +20,18 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 import Echo from 'laravel-echo';
 
 import Pusher from 'pusher-js';
+
+const response = await axios.get('/settings/pusher');
+const settings = response.data;
 window.Pusher = Pusher;
+
+
 
 window.Echo = new Echo({
     broadcaster: 'pusher',
-    key: '87892ed076b91483ee2a',
-    cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER ?? 'mt1',
-  
+   key: settings.pusher_key,
+    cluster: settings.cluster,
+
 
     forceTLS: (import.meta.env.VITE_PUSHER_SCHEME ?? 'https') === 'https',
     enabledTransports: ['ws', 'wss'],

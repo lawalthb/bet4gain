@@ -2,14 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\GameSpinResult;
 use App\Models\SpinGame;
 use App\Models\SpinBet;
 use App\Events\SpinGameStarted;
 use App\Events\SpinGameEnded;
+use App\Services\GameService;
 use Illuminate\Http\Request;
 
 class SpinGameController extends Controller
 {
+    private $gameService;
+
+    public function __construct(GameService $gameService)
+    {
+        $this->gameService = $gameService;
+    }
+
+
     public function start()
     {
         $game = SpinGame::create([
@@ -46,19 +56,13 @@ class SpinGameController extends Controller
 
     public function placeBet(Request $request)
     {
-        $validated = $request->validate([
-            'amount' => 'required|numeric|min:1',
-            'color' => 'required|in:red,black,green',
-            'game_id' => 'required|exists:spin_games,id'
-        ]);
+        $result = $this->gameService->processBet(
+            auth()->id(),
+            $request->amount,
+            $request->color
+        );
 
-        $bet = SpinBet::create([
-            'user_id' => auth()->id(),
-            'game_id' => $validated['game_id'],
-            'amount' => $validated['amount'],
-            'color' => $validated['color']
-        ]);
-
-        return response()->json($bet);
+        broadcast(new GameSpinResult($result))->toOthers();
+        return response()->json($result);
     }
 }

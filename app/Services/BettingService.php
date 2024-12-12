@@ -7,7 +7,7 @@ use App\Models\Game;
 use App\Models\User;
 use App\Models\Bot;
 use Pusher\Pusher;
-
+use App\Models\Setting;
 class BettingService
 {
     private $pusher;
@@ -15,11 +15,11 @@ class BettingService
     public function __construct()
     {
         $this->pusher = new Pusher(
-            '87892ed076b91483ee2a',
-            '1043bfa797b5c0b09de5',
-            '1769030',
+            Setting::get('pusher_key'),
+            Setting::get('pusher_secret'),
+            Setting::get('pusher_app_id'),
             [
-                'cluster' => 'mt1',
+                'cluster' => Setting::get('pusher_cluster'),
                 'useTLS' => true
             ]
         );

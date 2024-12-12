@@ -8,7 +8,7 @@ use App\Models\User;
 use App\Models\Message;
 use Illuminate\Support\Facades\Log;
 use Pusher\Pusher;
-
+use App\Models\Setting;
 
 class ChatController extends Controller
 {
@@ -18,15 +18,14 @@ class ChatController extends Controller
     public function __construct()
     {
        // $this->middleware('auth');
-        $this->pusher = new Pusher(
-            '87892ed076b91483ee2a',
-            '1043bfa797b5c0b09de5',
-            '1769030',
-            [
-                'cluster' => 'mt1',
-                'useTLS' => true
-            ]
-        );
+      $this->pusher = new Pusher(
+    Setting::get('pusher_key'),
+    Setting::get('pusher_secret'),
+    Setting::get('pusher_app_id'),
+    [
+        'cluster' => Setting::get('pusher_cluster'),
+        'useTLS' => true
+    ]);
         Log::info('Chat initialized');
     }
 
