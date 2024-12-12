@@ -30,7 +30,7 @@
                         {{ ucfirst($transaction->status) }}
                     </span>
                 </td>
-                <td class="px-6 py-4">{{ $transaction->created_at->format('Y-m-d H:i') }}</td>@
+                <td class="px-6 py-4">{{ $transaction->created_at->format('Y-m-d H:i') }}</td>
             </tr>
             @endforeach
         </tbody>

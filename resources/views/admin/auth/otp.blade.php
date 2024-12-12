@@ -13,7 +13,7 @@
             @csrf
             <div>
                 <label for="otp" class="block text-sm font-medium text-gray-700">OTP Code</label>
-                <input type="text" name="otp" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Enter 6-digit OTP">
+                <input type="text" name="otp" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Enter 6-digit OTP" style="border: 1px solid #ccc;  font-size: 16px; border-radius: 5px; padding: 5px;">
             </div>
             <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">
                 Verify OTP

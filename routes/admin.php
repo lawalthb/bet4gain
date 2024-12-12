@@ -43,4 +43,8 @@ Route::middleware(['auth:admin'])->group(function () {
     // Settings
     Route::get('/settings', [GameSettingsController::class, 'index'])->name('admin.settings');
     Route::post('/settings', [GameSettingsController::class, 'update'])->name('admin.settings.update');
+
+    Route::get('/profile', [AdminController::class, 'profile'])->name('admin.profile');
+    Route::put('/profile/update', [AdminController::class, 'updateProfile'])->name('admin.profile.update');
+    Route::put('/profile/password', [AdminController::class, 'updatePassword'])->name('admin.profile.password');
 });
