@@ -122,3 +122,5 @@ Route::get('/settings/pusher', function () {
         'cluster' => Setting::get('pusher_cluster')
     ]);
 });
+
+require __DIR__ . '/admin.php';
