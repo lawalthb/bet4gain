@@ -26,6 +26,9 @@ class AuthController extends Controller
             $otp = Str::random(6);
             $admin->update(['otp' => $otp]);
 
+            // Store email in session
+            session(['admin_email' => $admin->email]);
+
             Mail::to($admin->email)->send(new AdminOtpMail($otp));
 
             return redirect()->route('admin.otp');
@@ -41,12 +44,15 @@ class AuthController extends Controller
 
     public function verifyOtp(Request $request)
     {
-        $admin = Admin::where('email', session('admin_email'))
-                     ->where('otp', $request->otp)
-                     ->first();
 
+        $admin = Admin::where('email', session('admin_email'))
+            ->where('otp', $request->otp)
+            ->first();
+       // dd($admin);
         if ($admin) {
+           // dd('Admin logged in successfully');
             Auth::guard('admin')->login($admin);
+
             return redirect()->route('admin.dashboard');
         }
 

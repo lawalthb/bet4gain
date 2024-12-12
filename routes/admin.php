@@ -17,7 +17,7 @@ Route::post('/admin/otp/verify', [AuthController::class, 'verifyOtp'])->name('ad
 
 Route::middleware(['auth:admin'])->group(function () {
     // Dashboard
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
+    Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
 
     // Users Management
     Route::resource('users', UserController::class)->names('admin.users');
