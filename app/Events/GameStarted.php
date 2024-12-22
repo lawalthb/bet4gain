@@ -12,15 +12,22 @@ class GameStarted implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $game;
+    public $gameId;
+    public $startTime;
 
-    public function __construct($game)
+    public function __construct($data)
     {
-        $this->game = $game;
+        $this->gameId = $data['game_id'];
+        $this->startTime = $data['start_time'];
     }
 
     public function broadcastOn()
     {
         return new Channel('game');
+    }
+
+    public function broadcastAs()
+    {
+        return 'GameStarted';
     }
 }

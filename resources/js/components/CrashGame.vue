@@ -107,9 +107,9 @@
 
     <div class="controls-row">
       <div class="quick-amounts">
-        <button @click="quickBet(5)">$5</button>
-        <button @click="quickBet(10)">$10</button>
-        <button @click="quickBet(50)">$50</button>
+        <button @click="quickBet(5)">₦5</button>
+        <button @click="quickBet(10)">₦10</button>
+        <button @click="quickBet(50)">₦50</button>
         <button @click="betHalf">1/2</button>
         <button @click="betDouble">2x</button>
         <button @click="betMax">Max</button>
@@ -253,12 +253,22 @@ export default {
     }
 
     const updateMultiplier = (multiplier) => {
-      currentMultiplier.value = multiplier
+   currentMultiplier.value = Number(multiplier).toFixed(2);
         const progress = (multiplier - 1) / 9;
   const maxHeight = gameCanvas.value.clientHeight * 0.8;
   const currentHeight = maxHeight * progress;
         handleBotCashouts(multiplier);
 
+// Smooth animation for multiplier counting
+  gsap.to(currentMultiplier, {
+    value: multiplier,
+    duration: 0.1,
+    snap: { value: 0.01 }, // Snaps to 2 decimal places
+    onUpdate: () => {
+      document.querySelector('.multiplier').textContent =
+        `${Number(currentMultiplier.value).toFixed(2)}x`;
+    }
+  });
 
 gsap.to(rocketPosition.value, {
     x: gameCanvas.value.clientWidth * (progress * 0.3),
@@ -747,14 +757,19 @@ const rocketStyle = computed(() => ({
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 64px;
-  color: #4CAF50;
+  font-size: 72px;
   font-weight: bold;
-  text-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
-  z-index: 10;
-  transition: all 0.3s ease;
+  color: #4CAF50;
+  text-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+  font-family: 'Digital-7', monospace;
+  letter-spacing: 2px;
+  transition: all 0.1s linear;
 }
 
+.multiplier.active {
+  color: #00ff00;
+  text-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+}
 
 .multiplier.crashed {
   color: #f44336;
