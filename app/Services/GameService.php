@@ -8,6 +8,10 @@ use App\Models\GameSetting;
 use Illuminate\Support\Facades\Log;
 use Pusher\Pusher;
 use App\Models\Setting;
+use App\Models\Transaction;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
+
 class GameService
 {
     private $pusher;
@@ -109,7 +113,7 @@ class GameService
 
         return $baseMultiplier * exp($growthRate * $elapsedTime);
     }
-    
+
 
     private function crashGame($game)
     {
@@ -129,9 +133,6 @@ class GameService
             $this->pusher->trigger('game', 'LeaderboardUpdated', []);
 
             $this->pusher->trigger('game', 'GameHistoryUpdated', []);
-
-
-
         } catch (\Exception $e) {
             Log::error('Error crashing game', [
                 'game_id' => $game->id,
@@ -144,7 +145,7 @@ class GameService
 
     private function generateCrashPoint()
     {
-        $maxMultiplier = GameSetting::first()->max_multiplier;
+        $maxMultiplier =Setting::get('crash_max_multiplier');
         $crashPoint = mt_rand(100, $maxMultiplier * 100) / 100;
         Log::debug('Crash point generated', ['crash_point' => $crashPoint]);
         return $crashPoint;
@@ -239,9 +240,7 @@ class GameService
     public function getLeaderboard()
     {
         return User::orderBy('wallet_balance', 'desc')
-        ->take(10)
+            ->take(10)
             ->get(['id', 'name', 'wallet_balance']);
     }
-
-
 }

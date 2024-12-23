@@ -75,6 +75,7 @@ class RegisterController extends Controller
             'is_active' => 'Yes',
             'is_ban' => 'No',
             'user_role_id' => 2,
+            'wallet_balance' => 300,
         ]);
         event(new Registered($user));
     }

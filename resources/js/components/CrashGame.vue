@@ -165,6 +165,9 @@ export default {
     const botBets = ref([]) // Track bot bets
 
 
+
+
+
     const isLoggedIn = ref(window.auth.isLoggedIn)
     const userBalance = ref(window.auth.user ? window.auth.user.wallet_balance : 0)
       const demoBalance = ref(1000)
@@ -252,74 +255,89 @@ export default {
 
     }
 
+      // Enhanced multiplier handling
     const updateMultiplier = (multiplier) => {
-   currentMultiplier.value = Number(multiplier).toFixed(2);
-        const progress = (multiplier - 1) / 9;
-  const maxHeight = gameCanvas.value.clientHeight * 0.8;
-  const currentHeight = maxHeight * progress;
+      const targetMultiplier = Number(multiplier)
+
         handleBotCashouts(multiplier);
 
-// Smooth animation for multiplier counting
-  gsap.to(currentMultiplier, {
-    value: multiplier,
-    duration: 0.1,
-    snap: { value: 0.01 }, // Snaps to 2 decimal places
-    onUpdate: () => {
-      document.querySelector('.multiplier').textContent =
-        `${Number(currentMultiplier.value).toFixed(2)}x`;
+  // Smooth animation for multiplier counting
+      gsap.to(currentMultiplier, {
+        value: targetMultiplier,
+        duration: 0.1,
+        ease: "power1.in", // Exponential easing
+        snap: {
+          value: 0.01 // Snap to 2 decimal places
+        },
+        onUpdate: () => {
+          const displayValue = Number(currentMultiplier.value).toFixed(2)
+          if (document.querySelector('.multiplier')) {
+            document.querySelector('.multiplier').textContent = `${displayValue}x`
+          }
+        }
+      })
+
+  // Calculate rocket position using logarithmic scaling
+      const progress = Math.log(targetMultiplier) / Math.log(10)
+      const maxHeight = gameCanvas.value?.clientHeight * 0.8 || 0
+      const currentHeight = maxHeight * progress
+
+      // Smooth rocket movement
+      gsap.to(rocketPosition.value, {
+        x: (gameCanvas.value?.clientWidth || 0) * (progress * 0.3),
+        y: (gameCanvas.value?.clientHeight || 0) - currentHeight,
+        duration: 0.1,
+        ease: "none"
+      })
+
+      // Update rocket rotation for smooth flight path
+      gsap.to(rocketRotation, {
+        value: -15 + (progress * 30),
+        duration: 0.1
+      })
+
+      // Check for auto-cashout
+      checkAutoCashout(targetMultiplier)
     }
-  });
 
-gsap.to(rocketPosition.value, {
-    x: gameCanvas.value.clientWidth * (progress * 0.3),
-    y: gameCanvas.value.clientHeight - currentHeight,
-    duration: 0.2,
-    ease: "none"
-});
-    gsap.to(rocketRotation, {
-    value: -15 + (progress * 30),
-    duration: 0.2
-  });
-       // Check for auto-cashout
-  checkAutoCashout(multiplier);
-    }
-
-
+    // Enhanced crash animation
     const crashGame = (finalMultiplier) => {
       if (flightAnimation) flightAnimation.kill()
-      console.log('game as stooped');
+
       isGameActive.value = false
       hasCrashed.value = true
       crashPoint.value = finalMultiplier
       currentMultiplier.value = finalMultiplier
-const canvasHeight = gameCanvas.value.clientHeight || 400;
-       // Crash animation
-  gsap.to(rocketRotation, {
-    value: 90,
-    duration: 0.5,
-    ease: "power2.in"
-  });
- gsap.to(rocketPosition.value, {
-     y: canvasHeight + 100,
-    x: rocketPosition.value.x + 50,
-    duration: 0.8,
-    ease: "power2.in"
-  });
-gsap.to(rocketScale, {
-    value: 0.5,
-    duration: 0.8
-  });
-  gsap.to(rocketOpacity, {
-    value: 0,
-    duration: 0.8,
-    onComplete: () => {
-      setTimeout(startCountdown, 3000);
-      if (hasActiveBet.value) {
-        handleGameCrash(finalMultiplier);
 
-      }
-    }
-  });
+      const canvasHeight = gameCanvas.value?.clientHeight || 400
+
+      // Enhanced crash animation sequence
+      gsap.timeline()
+        .to(rocketRotation, {
+          value: 90,
+          duration: 0.5,
+          ease: "power2.in"
+        })
+        .to(rocketPosition.value, {
+          y: canvasHeight + 100,
+          x: rocketPosition.value.x + 50,
+          duration: 0.8,
+          ease: "power2.in"
+        }, 0)
+        .to(rocketScale, {
+          value: 0.5,
+          duration: 0.8
+        }, 0)
+        .to(rocketOpacity, {
+          value: 0,
+          duration: 0.8,
+          onComplete: () => {
+            setTimeout(startCountdown, 3000)
+            if (hasActiveBet.value) {
+              handleGameCrash(finalMultiplier)
+            }
+          }
+        }, 0)
 
       if (gameCanvas.value && airplane.value) {
         const canvasHeight = gameCanvas.value.offsetHeight || 400
@@ -357,11 +375,13 @@ gsap.to(rocketScale, {
         })
       }
 
+          // Update game history
       previousCrashes.value.unshift(finalMultiplier)
       if (previousCrashes.value.length > 5) {
         previousCrashes.value.pop()
       }
     }
+
 
     const startCountdown = () => {
       hasCrashed.value = false
@@ -591,13 +611,15 @@ const showLoseNotification = (amount) => {
     const betMax = () => {
       betAmount.value = userBalance.value
     }
-const rocketStyle = computed(() => ({
-  transform: `translate(${rocketPosition.value.x}px, ${rocketPosition.value.y}px)
-              rotate(${rocketRotation.value}deg)
-              scale(${rocketScale.value})`,
-  opacity: rocketOpacity.value
-}))
 
+// Enhanced computed properties
+    const rocketStyle = computed(() => ({
+      transform: `translate(${rocketPosition.value.x}px, ${rocketPosition.value.y}px)
+                rotate(${rocketRotation.value}deg)
+                scale(${rocketScale.value})`,
+      opacity: rocketOpacity.value,
+      transition: 'transform 0.1s linear'
+    }))
 
     return {
       gameCanvas,
@@ -1034,5 +1056,22 @@ button:disabled {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
+/* new code */
+.multiplier {
+  transition: color 0.2s ease;
+}
+
+/* Enhanced animation for crash effect */
+@keyframes shake {
+  0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+  25% { transform: translate(-52%, -50%) rotate(-2deg); }
+  75% { transform: translate(-48%, -50%) rotate(2deg); }
+}
+
+
+.multiplier.crashed {
+  animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
 </style>
 

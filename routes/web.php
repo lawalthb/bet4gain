@@ -43,8 +43,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/banks', [BankAccountController::class, 'getBanks']);
     Route::post('/bank-account', [BankAccountController::class, 'createTransferRecipient']);
 
-    Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
-    Route::post('/profile/update', [ProfileController::class, 'update']);
+    Route::get('player/profile', [ProfileController::class, 'show'])->name('player.profile');
+    Route::post('player/profile/update', [ProfileController::class, 'update']);
 
     // Game routes
     Route::post('/bet', [GameController::class, 'placeBet'])->name('bet');
