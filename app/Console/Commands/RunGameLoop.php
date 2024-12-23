@@ -18,7 +18,6 @@ class RunGameLoop extends Command
         parent::__construct();
         $this->gameService = $gameService;
     }
-
     public function handle()
     {
         Log::info('Game Loop Started');
@@ -29,16 +28,11 @@ class RunGameLoop extends Command
 
             while (!$game->is_completed) {
                 $this->gameService->updateGameState($game);
-                usleep(50000); // 50ms for smooth multiplier updates
+                usleep(16667); // ~60fps for smoother updates (1000000/60)
             }
 
             $this->info('Game crashed!');
-
-            // 5 second countdown
-            for ($i = 6; $i > 0; $i--) {
-                $this->info("Next game in {$i}...");
-                sleep(1);
-            }
+            sleep(5); // 5 second countdown
         }
     }
 }

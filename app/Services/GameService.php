@@ -100,16 +100,16 @@ class GameService
             throw $e;
         }
     }
-
     private function calculateMultiplier($elapsedTime)
     {
-        $multiplier = pow(1.0678, $elapsedTime * 6);
-        Log::debug('Multiplier calculated', [
-            'elapsed_time' => $elapsedTime,
-            'multiplier' => $multiplier
-        ]);
-        return $multiplier;
+        // Exponential growth formula: a * e^(b*t)
+        // where a and b are constants that control the growth rate
+        $baseMultiplier = 1.0;
+        $growthRate = 0.1; // Adjust this to control how fast it grows
+
+        return $baseMultiplier * exp($growthRate * $elapsedTime);
     }
+    
 
     private function crashGame($game)
     {
