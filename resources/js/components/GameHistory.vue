@@ -64,50 +64,31 @@
     </div>
   </div>
 </template>
-
 <script>
 import { ref, computed, onMounted } from 'vue';
 
 export default {
   name: 'GameHistory',
-
   setup() {
-
-     const generateRandomHistory = () => {
-      const history = [];
-      for (let i = 0; i < 10; i++) {
-        const crashPoint = (Math.random() * 5 + 1).toFixed(2);
-        const betAmount = Math.floor(Math.random() * 1000) + 100;
-        const profit = Math.random() > 0.5 ? betAmount * crashPoint - betAmount : -betAmount;
-
-        history.push({
-          id: i + 1,
-          created_at: new Date(Date.now() - i * 60000).toISOString(),
-          bet_amount: betAmount,
-          crash_point: parseFloat(crashPoint),
-          profit: parseFloat(profit.toFixed(2)),
-          status: profit > 0 ? 'won' : 'lost'
-        });
-      }
-      return history;
-    };
-
-
-
     const filter = ref('all');
     const currentPage = ref(1);
     const totalPages = ref(1);
-    const gameHistory = ref(generateRandomHistory());
+    const gameHistory = ref([]);
 
-
-
-
-      const fetchHistory = async (page = 1) => {
-
+    const fetchHistory = async (page = 1) => {
       try {
-      
         const response = await axios.get(`/game/history?page=${page}`);
-        gameHistory.value = response.data.data;
+
+        // Transform API data to match random history format
+        gameHistory.value = response.data.data.map(game => ({
+          id: game.id,
+          created_at: game.created_at,
+          bet_amount: game.bet_amount,
+          crash_point: parseFloat(game.crash_point),
+          profit: parseFloat(game.profit),
+          status: game.profit > 0 ? 'won' : 'lost'
+        }));
+
         currentPage.value = response.data.current_page;
         totalPages.value = response.data.last_page;
       } catch (error) {
@@ -129,13 +110,11 @@ export default {
       fetchHistory(page);
     };
 
-
     onMounted(() => {
       fetchHistory();
       window.Echo.channel('game')
         .listen('.GameHistoryUpdated', (e) => {
           fetchHistory();
-          gameHistory.value = e.gameHistory;
         });
     });
 
@@ -146,13 +125,11 @@ export default {
       gameHistory,
       filter,
       filteredHistory,
-        formatTime,
-
+      formatTime,
     };
   }
 }
 </script>
-
 <style scoped>
 .game-history {
   background: #1a1a1a;

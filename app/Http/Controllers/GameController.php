@@ -117,6 +117,7 @@ class GameController extends Controller
         $history = Game::with(['bets' => function ($query) {
             $query->where('user_id', auth()->id());
         }])
+            ->where('is_completed', 1)
         ->latest()
         ->paginate(10)
         ->through(function ($game) {
