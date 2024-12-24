@@ -164,7 +164,12 @@ export default {
       const botsCount = ref(3) // Number of active bots
     const botBets = ref([]) // Track bot bets
 
-
+const africanNames = [
+    'Oluwaseun', 'Chioma', 'Kwame', 'Amara', 'Zainab',
+    'Folake', 'Babajide', 'Aisha', 'Chidi', 'Ngozi',
+    'Olayinka', 'Mandla', 'Thabo', 'Tendai', 'Amina',
+    'Koffi', 'Abena', 'Chinua', 'Folami', 'Kehinde'
+];
 
 
 
@@ -552,25 +557,22 @@ const showWinNotification = (amount) => {
 
 // Add this function to handle bot betting
 const handleBotBets = () => {
-  // Clear previous bot bets
-  botBets.value = []
+    botBets.value = []
+    const activeBots = Math.floor(Math.random() * botsCount.value) + 1
 
-  // Generate random number of bots that will bet (1-3)
-  const activeBots = Math.floor(Math.random() * botsCount.value) + 1
-
-  for (let i = 0; i < activeBots; i++) {
-    const botBet = {
-      id: `bot-${i}`,
-      name: `Player${Math.floor(Math.random() * 1000)}`,
-      amount: Math.floor(Math.random() * 90) + 10, // Random bet 10-100
-      autoCashout: (Math.random() * 3 + 1.2).toFixed(2) // Random cashout 1.2-4.2x
+    for (let i = 0; i < activeBots; i++) {
+        const randomName = africanNames[Math.floor(Math.random() * africanNames.length)]
+        const botBet = {
+            id: `bot-${i}`,
+            name: randomName,
+            amount: Math.floor(Math.random() * 90) + 10,
+            autoCashout: (Math.random() * 3 + 1.2).toFixed(2)
+        }
+        botBets.value.push(botBet)
+        activePlayers.value++
+        totalBets.value += botBet.amount
     }
-
-    botBets.value.push(botBet)
-    activePlayers.value++
-    totalBets.value += botBet.amount
-  }
-}
+}//end bot betting
 
 // Add bot cashout logic
 const handleBotCashouts = (multiplier) => {
