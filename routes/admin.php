@@ -47,4 +47,11 @@ Route::middleware(['auth:admin'])->group(function () {
     Route::get('/profile', [AdminController::class, 'profile'])->name('admin.profile');
     Route::put('/profile/update', [AdminController::class, 'updateProfile'])->name('admin.profile.update');
     Route::put('/profile/password', [AdminController::class, 'updatePassword'])->name('admin.profile.password');
+
+
+    Route::get('/settings/pusher', [GameSettingsController::class, 'pusherSettings'])->name('admin.settings.pusher');
+    Route::post('/settings/pusher', [GameSettingsController::class, 'updatePusherSettings'])->name('admin.settings.pusher.update');
+
 });
+
+

@@ -63,6 +63,45 @@ class GameSettingsController extends Controller
 
         return view('admin.settings.index', compact('settings'));
     }
+
+
+
+
+public function pusherSettings()
+{
+    $settings = [
+        'app_id' => Setting::get('pusher_app_id'),
+        'app_key' => Setting::get('pusher_app_key'),
+        'app_secret' => Setting::get('pusher_app_secret'),
+        'cluster' => Setting::get('pusher_cluster'),
+        // 'host' => Setting::get('pusher_host'),
+        // 'port' => Setting::get('pusher_port'),
+        // 'scheme' => Setting::get('pusher_scheme')
+    ];
+
+    return view('admin.settings.pusher', compact('settings'));
 }
 
+public function updatePusherSettings(Request $request)
+{
+    $validated = $request->validate([
+        'app_id' => 'required',
+        'app_key' => 'required',
+        'app_secret' => 'required',
+        'cluster' => 'required',
+        // 'host' => 'required',
+        // 'port' => 'required',
+        // 'scheme' => 'required'
+    ]);
 
+    foreach ($validated as $key => $value) {
+        Setting::updateOrCreate(
+            ['key' => 'pusher_' . $key],
+            ['value' => $value]
+        );
+    }
+
+    return back()->with('success', 'Pusher settings updated successfully');
+}
+
+}

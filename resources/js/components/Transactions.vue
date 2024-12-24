@@ -35,6 +35,9 @@
 
     <!-- Withdraw Modal -->
     <div v-if="showWithdrawForm" class="modal">
+        <div v-if="errorMessage" class="error-message">
+  {{ errorMessage }}
+</div>
       <div class="modal-content">
         <h3>Withdraw Funds</h3>
         <form @submit.prevent="initiateWithdraw">
@@ -66,7 +69,7 @@
 
     <!-- Transaction History -->
     <div class="transaction-history">
-      <h3>Transaction History55</h3>
+      <h3>Transaction History</h3>
       <table>
         <thead>
           <tr>
@@ -159,8 +162,13 @@ export default {
           this.showWithdrawForm = false
         }
       } catch (error) {
-        console.error('Withdrawal failed:', error)
-      }
+    // Display error message from backend
+    if (error.response?.data?.message) {
+      this.errorMessage = error.response.data.message
+    } else {
+      this.errorMessage = 'Withdrawal failed. Please try again.'
+    }
+  }
     },
 
     async loadTransactions() {
@@ -260,3 +268,5 @@ th, td {
     display: block;
 }
 </style>
+
+

@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use App\Services\PaystackService;
+use Carbon\Carbon;
 
 class TransactionController extends Controller
 {
@@ -27,6 +28,16 @@ class TransactionController extends Controller
         ]);
 
         $amount = $validated['amount'] * 100; // Convert to kobo/cents
+        $bonusAmount = 0;
+
+        // Check if it's Wednesday
+        if (now()->isDayOfWeek(Carbon::WEDNESDAY)) {
+            $bonusAmount = $amount; // 100% bonus
+            $totalAmount = $amount + $bonusAmount;
+        } else {
+            $totalAmount = $amount;
+        }
+
 
         $reference = 'DEP' . Str::random(17);
 
@@ -47,7 +58,8 @@ class TransactionController extends Controller
             Transaction::create([
                 'user_id' => auth()->id(),
                 'reference' => $reference,
-                'amount' => $validated['amount'],
+                //'amount' => $validated['amount'],
+                'amount' => $totalAmount,
                 'type' => 'Deposit',
                 'payment_method' => 'Paystack',
                 'email' => auth()->user()->email,
@@ -116,7 +128,22 @@ class TransactionController extends Controller
             'account_name' => 'required|string'
         ]);
 
-        if (auth()->user()->wallet_balance < $validated['amount']) {
+        $user = auth()->user();
+
+        // Check total deposits
+        $totalDeposits = Transaction::where('user_id', $user->id)
+            ->where('type', 'Deposit')
+            ->where('status', 'Completed')
+            ->sum('amount');
+
+        if ($totalDeposits < 1000) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You need to deposit at least ₦1,000 before making withdrawals'
+            ], 400);
+        }
+
+        if ($user->wallet_balance < $validated['amount']) {
             return response()->json([
                 'success' => false,
                 'message' => 'Insufficient balance'
@@ -124,15 +151,15 @@ class TransactionController extends Controller
         }
 
         $transaction = Transaction::create([
-            'user_id' => auth()->id(),
+            'user_id' => $user->id,
             'reference' => 'WIT' . Str::random(17),
             'amount' => $validated['amount'],
             'type' => 'Withdrawal',
             'bank_name' => $validated['bank_name'],
             'account_number' => $validated['account_number'],
             'account_name' => $validated['account_name'],
-            'email' => auth()->user()->email,
-            'phone' => auth()->user()->phone_number,
+            'email' => $user->email,
+            'phone' => $user->phone_number,
             'ip_address' => $request->ip(),
             'status' => 'Pending'
         ]);
@@ -142,6 +169,7 @@ class TransactionController extends Controller
             'transaction' => $transaction
         ]);
     }
+
 
     public function giveBonus(User $user, $amount)
     {
