@@ -163,7 +163,7 @@ export default {
       const notifications = ref([])
       const botsCount = ref(3) // Number of active bots
     const botBets = ref([]) // Track bot bets
-
+const countdownTimer = ref(null)
 const africanNames = [
     'Oluwaseun', 'Chioma', 'Kwame', 'Amara', 'Zainab',
     'Folake', 'Babajide', 'Aisha', 'Chidi', 'Ngozi',
@@ -388,21 +388,38 @@ const africanNames = [
     }
 
 
-    const startCountdown = () => {
-      hasCrashed.value = false
-      countdown.value = 5
-      const timer = setInterval(() => {
-        countdown.value--
-        if (countdown.value <= 0) {
-          clearInterval(timer)
-        }
-      }, 1000)
+   const startCountdown = () => {
+    hasCrashed.value = false
+    countdown.value = 5
+
+    // Clear any existing interval
+    if (countdownTimer.value) {
+        clearInterval(countdownTimer.value)
     }
+
+    // Create new interval with precise timing
+    countdownTimer.value = setInterval(() => {
+        if (countdown.value <= 1) {
+            clearInterval(countdownTimer.value)
+            countdown.value = 0
+            // Trigger next game start
+            startGame()
+        } else {
+            countdown.value--
+        }
+    }, 1000)
+}
 
     onUnmounted(() => {
       if (flightAnimation) {
         flightAnimation.kill()
       }
+
+      if (countdownTimer.value) {
+        clearInterval(countdownTimer.value)
+    }
+
+
     })
 
     const flightPath = ref(null)

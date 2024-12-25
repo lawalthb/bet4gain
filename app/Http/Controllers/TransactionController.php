@@ -28,15 +28,6 @@ class TransactionController extends Controller
         ]);
 
         $amount = $validated['amount'] * 100; // Convert to kobo/cents
-        $bonusAmount = 0;
-
-        // Check if it's Wednesday
-        if (now()->isDayOfWeek(Carbon::WEDNESDAY)) {
-            $bonusAmount = $amount; // 100% bonus
-            $totalAmount = $amount + $bonusAmount;
-        } else {
-            $totalAmount = $amount;
-        }
 
 
         $reference = 'DEP' . Str::random(17);
@@ -58,8 +49,8 @@ class TransactionController extends Controller
             Transaction::create([
                 'user_id' => auth()->id(),
                 'reference' => $reference,
-                //'amount' => $validated['amount'],
-                'amount' => $totalAmount,
+                'amount' => $validated['amount'],
+
                 'type' => 'Deposit',
                 'payment_method' => 'Paystack',
                 'email' => auth()->user()->email,
@@ -213,9 +204,23 @@ class TransactionController extends Controller
             $response = $paystack->verifyPayment($reference);
 
             if ($response['status'] && $response['data']['status'] === 'success') {
+
+                // Check if it's Wednesday
+                if (now()->isDayOfWeek(Carbon::WEDNESDAY)) {
+                    $bonusAmount
+                        =
+                        $transaction->amount;
+                    $totalAmount = $transaction->amount + $bonusAmount;
+                    $success = "Payment completed successfully and Wednesday 100% Bonus added";
+                } else {
+                    $totalAmount = $transaction->amount;
+                    $success = "Payment completed successfully";
+                }
                 // Update transaction status
                 $transaction->update([
                     'status' => 'Success',
+                    'amount'
+                    =>  $totalAmount,
                     'gateway_response' => $response['data']['gateway_response'],
                     'paid_at' => now()
                 ]);
@@ -224,7 +229,7 @@ class TransactionController extends Controller
                 $transaction->user->increment('wallet_balance', $transaction->amount);
 
                 return redirect()->route('wallet')
-                    ->with('success', 'Payment completed successfully');
+                    ->with('success', $success);
             }
         }
 

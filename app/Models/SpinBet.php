@@ -7,20 +7,22 @@ use Illuminate\Database\Eloquent\Model;
 class SpinBet extends Model
 {
     protected $fillable = [
-        'result',
+        'user_id',
+        'spin_game_id',
+        'amount',
+        'color',
         'multiplier',
-        'status',
-        'started_at',
-        'ended_at'
+        'profit',
+        'status'
     ];
 
-    protected $casts = [
-        'started_at' => 'datetime',
-        'ended_at' => 'datetime'
-    ];
-
-    public function bets()
+    public function user()
     {
-        return $this->hasMany(SpinBet::class);
+        return $this->belongsTo(User::class);
+    }
+
+    public function game()
+    {
+        return $this->belongsTo(SpinGame::class);
     }
 }

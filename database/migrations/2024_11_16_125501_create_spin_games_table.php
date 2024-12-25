@@ -13,11 +13,10 @@ return new class extends Migration
     {
         Schema::create('spin_games', function (Blueprint $table) {
             $table->id();
-            $table->string('result')->nullable();
+            $table->string('result_color')->nullable();
             $table->decimal('multiplier', 8, 2)->nullable();
-            $table->string('status');
+            $table->boolean('is_completed')->default(false);
             $table->timestamp('started_at');
-            $table->timestamp('ended_at')->nullable();
             $table->timestamps();
         });
     }

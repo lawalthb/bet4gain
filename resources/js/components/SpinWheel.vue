@@ -6,7 +6,20 @@
      ref="wheel">
       <div class="pointer"></div>
     </div>
-
+<div class="notifications-wrapper">
+    <div v-for="(notification, index) in notifications"
+         :key="index"
+         :class="['game-notification', notification.type]">
+        <div class="notification-content">
+            <span :class="`${notification.type}-amount`">
+                {{ notification.type === 'win' ? '+' : '-' }}₦{{ notification.amount.toFixed(2) }}
+            </span>
+            <span :class="`${notification.type}-text`">
+                {{ notification.message }}
+            </span>
+        </div>
+    </div>
+</div>
     <div class="betting-panel">
       <div class="bet-options">
         <button v-for="segment in segments" :key="segment.color"
@@ -27,7 +40,6 @@
 <script>
 import { ref, computed } from 'vue'
 import gsap from 'gsap'
-import Echo from 'laravel-echo'
 
 export default {
   name: 'SpinWheel',
@@ -36,6 +48,10 @@ export default {
     const isSpinning = ref(false)
     const selectedColor = ref(null)
     const betAmount = ref(10)
+    const userBalance = ref(window.auth?.user?.wallet_balance || 0)
+    const isLoggedIn = ref(window.auth?.isLoggedIn || false)
+    const demoBalance = ref(1000)
+const notifications = ref([])
     const segments = ref([
       { color: 'red', multiplier: 2 },
       { color: 'black', multiplier: 2 },
@@ -51,104 +67,124 @@ export default {
       { color: 'lime', multiplier: 2 }
     ])
 
-//     const spinWheel = (result) => {
-//   isSpinning.value = true;
-//   const wheel = wheel.value;
-
-//   // Get the current rotation
-//   const currentRotation = getComputedStyle(wheel).getPropertyValue('transform');
-//   wheel.style.transform = currentRotation;
-
-//   const rotations = 5;
-//   const segmentAngle = 360 / segments.value.length;
-//   const targetAngle = calculateTargetAngle(result);
-
-//   gsap.to(wheel, {
-//     rotation: `+=${rotations * 360 + targetAngle}`,
-//     duration: 5,
-//     ease: "power2.out",
-//     onComplete: () => {
-//       isSpinning.value = false;
-//       // Reset transform to allow continuous rotation to resume
-//       wheel.style.transform = '';
-//     }
-//   });
-// };
-// onMounted(() => {
-//       Echo.channel('game')
-//         .listen('GameSpinResult', (e) => {
-//           spinWheel(e.result)
-//         })
-//     })
-
-    const placeBet = async () => {
-  try {
-    const response = await axios.post('/spin/bet', {
-      amount: betAmount.value,
-      color: selectedColor.value
+    const canBet = computed(() => {
+      if (isLoggedIn.value) {
+        return !isSpinning.value && selectedColor.value && betAmount.value > 0 && betAmount.value <= userBalance.value
+      }
+      return !isSpinning.value && selectedColor.value && betAmount.value > 0 && betAmount.value <= demoBalance.value
     })
 
-    if(response.data.success) {
-      // Show betting confirmation
-      betAmount.value = 10 // Reset bet amount
-      selectedColor.value = null // Reset color selection
-
-      // Start wheel animation
+    const spinWheel = (result) => {
       isSpinning.value = true
-    }
-  } catch (error) {
-    // Show error message to user
-    console.error('Betting error:', error)
-  }
-}
+      const wheelElement = wheel.value
 
-const handleSpinResult = (result) => {
-  const winningSegment = segments.value.find(s => s.color === result)
-  const winAmount = betAmount.value * winningSegment.multiplier
+      const rotations = 5
+      const segmentAngle = 360 / segments.value.length
+      const targetSegment = segments.value.findIndex(s => s.color === result)
+      const targetAngle = targetSegment * segmentAngle
 
-  // Show win/loss message
-  if(selectedColor.value === result) {
-    // User won
-    alert(`You won ${winAmount}!`)
-  } else {
-    // User lost
-    alert('Better luck next time!')
-  }
-}
-
-
-const spinWheel = (result) => {
-  isSpinning.value = true
-  const wheel = wheel.value
-
-  gsap.to(wheel, {
-    rotation: `+=${5 * 360 + calculateTargetAngle(result)}`,
-    duration: 5,
-    ease: "power2.out",
-    onComplete: () => {
-      isSpinning.value = false
-      handleSpinResult(result)
-      wheel.style.transform = ''
-    }
-  })
-}
-
-
-    const calculateTargetAngle = (result) => {
-      const segmentIndex = segments.value.findIndex(s => s.color === result)
-      return segmentIndex * (360 / segments.value.length)
+      gsap.to(wheelElement, {
+        rotation: `+=${rotations * 360 + targetAngle}`,
+        duration: 5,
+        ease: "power2.out",
+        onComplete: () => {
+          isSpinning.value = false
+          handleSpinResult(result)
+          wheelElement.style.transform = ''
+        }
+      })
     }
 
+    const placeBet = async () => {
+      if (!canBet.value) return
 
+      try {
+        if (!isLoggedIn.value) {
+          // Handle demo mode
+          demoBalance.value -= betAmount.value
+          // Simulate spin result
+          const randomSegment = segments.value[Math.floor(Math.random() * segments.value.length)]
+          spinWheel(randomSegment.color)
+          return
+        }
 
-    const canBet = computed(() => selectedColor.value && betAmount.value > 0 && !isSpinning.value)
+        const response = await axios.post('/spin/bet', {
+          amount: betAmount.value,
+          color: selectedColor.value
+        })
+
+        if (response.data.success) {
+          userBalance.value = response.data.balance
+          spinWheel(response.data.result)
+        }
+      } catch (error) {
+        console.error('Betting error:', error)
+      }
+    }
+
+    const handleSpinResult = (result) => {
+      const winningSegment = segments.value.find(s => s.color === result)
+
+      if (selectedColor.value === result) {
+        const winAmount = betAmount.value * winningSegment.multiplier
+        if (isLoggedIn.value) {
+          userBalance.value += winAmount
+        } else {
+          demoBalance.value += winAmount
+        }
+        showWinNotification(winAmount)
+      } else {
+        showLoseNotification(betAmount.value)
+      }
+
+      selectedColor.value = null
+      betAmount.value = 10
+    }
+
+    const showWinNotification = (amount) => {
+    notifications.value.push({
+        type: 'win',
+        amount: amount,
+        message: `Congratulations! You won ₦${amount.toFixed(2)}!`
+    })
+
+    setTimeout(() => {
+        notifications.value.shift()
+    }, 3000)
+}
+
+const showLoseNotification = (amount) => {
+    notifications.value.push({
+        type: 'lose',
+        amount: amount,
+        message: `Better luck next time! Lost ₦${amount.toFixed(2)}`
+    })
+
+    setTimeout(() => {
+        notifications.value.shift()
+    }, 3000)
+}
 
     const selectColor = (color) => {
-      selectedColor.value = color
+      if (!isSpinning.value) {
+        selectedColor.value = color
+      }
     }
 
     return {
-      wheel, isSpinning, selectedColor, betAmount, segments, canBet, spinWheel, selectColor, placeBet
+      wheel,
+      isSpinning,
+      selectedColor,
+      betAmount,
+      segments,
+      canBet,
+      spinWheel,
+      selectColor,
+      placeBet,
+      userBalance,
+      isLoggedIn,
+        demoBalance,
+       notifications
     }
   }
 }
@@ -304,4 +340,49 @@ const spinWheel = (result) => {
 .wheel.stopped {
   animation: none;
 }
+
+
+.notifications-wrapper {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.game-notification {
+    padding: 15px 20px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    color: white;
+    animation: slideIn 0.5s ease-out;
+}
+
+.win {
+    background: linear-gradient(45deg, #4CAF50, #45a049);
+    box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
+}
+
+.lose {
+    background: linear-gradient(45deg, #f44336, #e53935);
+    box-shadow: 0 0 20px rgba(244, 67, 54, 0.3);
+}
+
+.notification-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
 </style>

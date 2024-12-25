@@ -107,6 +107,12 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/spin/start', [SpinGameController::class, 'start']);
     Route::post('/spin/bet', [SpinGameController::class, 'placeBet']);
     Route::post('/spin/{game}/spin', [SpinGameController::class, 'spin']);
+
+
+    Route::post('/spin/bet', [SpinGameController::class, 'placeBet']);
+    Route::get('/spin/history', [SpinGameController::class, 'getHistory']);
+
+    
 });
 
 

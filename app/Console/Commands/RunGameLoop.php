@@ -32,7 +32,7 @@ class RunGameLoop extends Command
             }
 
             $this->info('Game crashed!');
-            sleep(5); // 5 second countdown
+            sleep(8); // 8 second countdown
         }
     }
 }
