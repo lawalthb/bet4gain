@@ -41,19 +41,32 @@ export default {
     };
   },
     mounted() {
-    this.loadInitialMessages();
-    window.Echo.channel('public-chat')
-      .listen('.Chats', (e) => {
-        this.messages.push({
-          user: e.user,
-          message: e.message.chats,
-          time: new Date().toLocaleTimeString(),
-        });
-         this.$nextTick(() => {
-            this.scrollToBottom();
-          });
-      });
-  },
+        this.loadInitialMessages();
+        const initEchoChannel2 = () => {
+            if (window.Echo) {
+                window.Echo.channel('public-chat')
+                    .listen('.Chats', (e) => {
+                        this.messages.push({
+                            user: e.user,
+                            message: e.message.chats,
+                            time: new Date().toLocaleTimeString(),
+                        });
+                        this.$nextTick(() => {
+                            this.scrollToBottom();
+                        });
+                    });
+
+
+
+            } else {
+                setTimeout(initEchoChannel2, 100);
+            }
+
+        }
+
+        initEchoChannel2();
+
+    },
     methods: {
     loadInitialMessages() {
       axios.get('/chat/messages')

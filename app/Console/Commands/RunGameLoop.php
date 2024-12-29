@@ -36,3 +36,4 @@ class RunGameLoop extends Command
         }
     }
 }
+

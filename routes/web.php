@@ -111,8 +111,6 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('/spin/bet', [SpinGameController::class, 'placeBet']);
     Route::get('/spin/history', [SpinGameController::class, 'getHistory']);
-
-    
 });
 
 
@@ -122,11 +120,13 @@ Route::get('/spin', function () {
 
 
 
-Route::get('/settings/pusher', function () {
-    return response()->json([
-        'pusher_key' => Setting::get('pusher_key'),
-        'cluster' => Setting::get('pusher_cluster')
-    ]);
-});
 
 require __DIR__ . '/admin.php';
+
+
+Route::get('/settings', function () {
+    return response()->json([
+        'pusher_key' => Setting::get('pusher_key'),
+        'pusher_cluster' => Setting::get('pusher_cluster')
+    ]);
+})->name('settings')->middleware('web');

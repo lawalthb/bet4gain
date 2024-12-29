@@ -7,6 +7,13 @@
     <title>Bet4Gain</title>
     <link rel="icon" href="{{ asset('assets/images/favicon.png') }}" type="image/x-icon">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+
+
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
     <style>
         .bg-gradient-text {
             background-size: 200% auto;

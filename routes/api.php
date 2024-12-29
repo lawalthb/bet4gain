@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\GameController;
+use App\Models\Setting;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -9,3 +10,6 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 Route::get('/game-history', [GameController::class, 'history']);
+
+
+

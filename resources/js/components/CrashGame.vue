@@ -15,7 +15,7 @@
     <div class="stat-card bg-gray-700 p-3 rounded-lg">
       <div class="text-gray-400 text-sm">Balance</div>
       <div class="text-xl font-bold" v-if="isLoggedIn">₦{{ userBalance }}</div>
-      <div class="text-xl font-bold" v-else>₦{{ demoBalance.toFixed(2) }}</div>
+      <div class="text-xl font-bold" v-else>₦{{ demoBalance }}</div>
     </div>
   </div>
 
@@ -61,19 +61,22 @@
      <div class="rocket-container" ref="airplane" :style="rocketStyle">
       <img src="/resources/img/rocket223.png" alt="rocket" />
     </div>
-     <div
-  v-show="isGameActive && !hasCrashed"
-  class="multiplier"
-  :class="{ 'crashed': hasCrashed }"
->
-  {{ currentMultiplier.toFixed(2) }}x
+   <div class="multiplier" :class="{ 'crashed': hasCrashed }">
+    {{ currentMultiplier.toFixed(2) }}x
 </div>
 
+
       <div v-if="!isGameActive && !hasCrashed" class="status">
+        <br />
+         <br />
+          <br />
         Starting in {{ countdown }}s
       </div>
       <div v-if="hasCrashed" class="crash-point">
-        Crashed at {{ crashPoint.toFixed(2) }}x
+        <br />
+         <br />
+          <br />
+        Crashed!
       </div>
     </div>
 
@@ -147,7 +150,8 @@
 <script>
 import { ref, onMounted, onUnmounted , computed} from 'vue'
 import gsap from 'gsap';
-import botNames from '../data/botNames.json';
+import Pusher from 'pusher-js';
+import africanNames from '../data/botNames.json';
 
 export default {
   name: 'CrashGame',
@@ -164,18 +168,12 @@ export default {
       const botsCount = ref(3) // Number of active bots
     const botBets = ref([]) // Track bot bets
 const countdownTimer = ref(null)
-const africanNames = [
-    'Oluwaseun', 'Chioma', 'Kwame', 'Amara', 'Zainab',
-    'Folake', 'Babajide', 'Aisha', 'Chidi', 'Ngozi',
-    'Olayinka', 'Mandla', 'Thabo', 'Tendai', 'Amina',
-    'Koffi', 'Abena', 'Chinua', 'Folami', 'Kehinde'
-];
 
 
 
     const isLoggedIn = ref(window.auth.isLoggedIn)
     const userBalance = ref(window.auth.user ? window.auth.user.wallet_balance : 0)
-      const demoBalance = ref(1000)
+      const demoBalance = ref(999)
 
   const canPlaceBet = computed(() => {
       if (isLoggedIn.value) {
@@ -192,40 +190,52 @@ const africanNames = [
     }
   }
 };
-      onMounted(() => {
+      onMounted(async  () => {
         if (window.innerWidth <= 768) {
     const gameElement = document.querySelector('.crash-game');
     if (gameElement) {
       gameElement.scrollIntoView({ behavior: 'smooth' });
     }
   }
-      window.Echo.channel('game')
-        .listen('.GameStarted', (e) => {
-          try {
-              console.log('🎮 Game Started:', e)
-             currentGameId.value = e.game.id
-            startGame()
-          } catch (error) {
-            console.error('Error starting game:', error)
-          }
+
+
+
+
+        const response =  await  axios.get('/settings')
+        const pusher = new Pusher(response.data.pusher_key, {
+            cluster: response.data.pusher_cluster
         })
-        .listen('.GameUpdated', (e) => {
-          try {
-            console.log('📈 Multiplier:', e.multiplier)
-            updateMultiplier(e.multiplier)
-          } catch (error) {
-            console.error('Error updating multiplier:', error)
-          }
-        })
-        .listen('.GameCrashed', (e) => {
-          try {
-            console.log('💥 Crashed at:', e.crash_point)
-            let crashNumber = Number(e.crash_point)
-            crashGame(crashNumber)
-          } catch (error) {
-            console.error('Error handling crash:', error)
-          }
-        })
+      const  channel = pusher.subscribe('game');
+
+             channel.bind('GameStarted', (e) => {
+                try {
+                  console.log('🎮 Game Started:', e)
+                  currentGameId.value = e.game.id
+                  startGame()
+                } catch (error) {
+                  console.error('Error starting game:', error)
+                }
+              })
+              .bind('GameUpdated', (e) => {
+                try {
+                  console.log('📈 Multiplier:', e.multiplier)
+                  updateMultiplier(e.multiplier)
+                } catch (error) {
+                  console.error('Error updating multiplier:', error)
+                }
+              })
+              .bind('GameCrashed', (e) => {
+                try {
+                  console.log('💥 Crashed at:', e.crash_point)
+                  let crashNumber = Number(e.crash_point)
+                  crashGame(crashNumber)
+                } catch (error) {
+                  console.error('Error handling crash:', error)
+                }
+
+              });
+
+
 
       if (isLoggedIn.value) {
         loadUserBalance()
@@ -578,7 +588,7 @@ const handleBotBets = () => {
     const activeBots = Math.floor(Math.random() * botsCount.value) + 1
 
     for (let i = 0; i < activeBots; i++) {
-        const randomName = africanNames[Math.floor(Math.random() * africanNames.length)]
+        const randomName = africanNames.usernames[Math.floor(Math.random() * africanNames.usernames.length)]
         const botBet = {
             id: `bot-${i}`,
             name: randomName,
@@ -1093,4 +1103,3 @@ button:disabled {
 }
 
 </style>
-
