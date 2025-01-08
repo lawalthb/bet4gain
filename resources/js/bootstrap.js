@@ -7,8 +7,13 @@ window.axios = axios;
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
 axios.get('/settings').then(response => {
-    console.log('Pusher Key:', response.data.pusher_key);
-    console.log('Pusher Cluster:', response.data.pusher_cluster);
+    // console.log('Pusher Key:', response.data.pusher_key);
+    // console.log('Pusher Cluster:', response.data.pusher_cluster);
+
+
+  localStorage.setItem('pusherKey', response.data.pusher_key);
+    localStorage.setItem('pusherCluster', response.data.pusher_cluster);
+
 
     window.Pusher = Pusher;
 

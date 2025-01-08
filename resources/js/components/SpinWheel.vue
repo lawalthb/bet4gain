@@ -168,10 +168,9 @@ const setInitialPosition = (color) => {
 
 
             // Initialize Pusher
-            const pusher = new Pusher('87892ed076b91483ee2a', {
-                cluster: 'mt1'
-            })
-
+  const pusher = new Pusher(localStorage.getItem('pusherKey'), {
+    cluster: localStorage.getItem('pusherCluster')
+})
             // Subscribe to spin-game channel
             const chl = pusher.subscribe('spin-game')
 
