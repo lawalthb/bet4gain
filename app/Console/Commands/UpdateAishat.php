@@ -6,21 +6,21 @@ use App\Models\Setting;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 
-class UpdateBetonline extends Command
+class UpdateAishat extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'pusher:betonline';
+    protected $signature = 'pusher:aishat';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Update Pusher settings to betonline details';
+    protected $description = 'Update Pusher settings to Aishat details';
     /**
      * Execute the console command.
      */
@@ -29,10 +29,10 @@ class UpdateBetonline extends Command
 
 
         // Get values for the new set from settings
-        $newAppId = Setting::get("pusher_app_id_3");
-        $newKey = Setting::get("pusher_key_3");
-        $newSecret = Setting::get("pusher_secret_3");
-        $newEmail = Setting::get("pusher_email_3");
+        $newAppId = Setting::get("pusher_app_id_4");
+        $newKey = Setting::get("pusher_key_4");
+        $newSecret = Setting::get("pusher_secret_4");
+        $newEmail = Setting::get("pusher_email_4");
 
         // Update active credentials
         Setting::updateOrCreate(['key' => 'pusher_app_id'], ['value' => $newAppId]);
@@ -41,8 +41,8 @@ class UpdateBetonline extends Command
         Setting::updateOrCreate(['key' => 'pusher_email'], ['value' => $newEmail]);
 
         // Update the active set indicator
-        Setting::updateOrCreate(['key' => 'active_pusher_set'], ['value' => 3]);
+        Setting::updateOrCreate(['key' => 'active_pusher_set'], ['value' => 4]);
 
-        $this->info("Switched to Pusher credentials set Betonline");
+        $this->info("Switched to Pusher credentials set Aishat");
     }
 }

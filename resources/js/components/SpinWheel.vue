@@ -1,11 +1,55 @@
 <template>
   <div class="spin-game">
-    <div class="wheel-container">
-     <img src="/resources/img/wheel.png" alt="Wheel" class="wheel"
-     :class="{ stopped: isSpinning }"
-     ref="wheel">
-      <div class="pointer"></div>
+      <div class="game-stats">
+  <div class="stats-container">
+    <div class="recent-results">
+      <h3>Last Results</h3>
+      <div class="result-dots">
+        <div v-for="(result, index) in lastResults"
+             :key="index"
+             :class="['result-dot', result.color]"
+             :title="`${result.color.toUpperCase()} - ${result.multiplier}x`">
+          {{result.multiplier}}x
+        </div>
+      </div>
     </div>
+
+    <div class="stats-grid">
+  <div class="stat-box">
+    <span class="stat-label">Your Balance</span>
+    <span class="stat-value">₦{{isLoggedIn ? userBalance : demoBalance}}</span>
+  </div>
+  <div class="stat-box">
+    <span class="stat-label">Total Games</span>
+    <span class="stat-value">{{stats.totalGames}}</span>
+  </div>
+  <div class="stat-box">
+    <span class="stat-label">Highest Win</span>
+    <span class="stat-value">₦{{stats.highestWin}}</span>
+  </div>
+  <div class="stat-box">
+    <span class="stat-label">Average Multiplier</span>
+    <span class="stat-value">{{stats.avgMultiplier}}x</span>
+  </div>
+</div>
+  </div>
+</div>
+<div class="wheel-container">
+  <img src="/resources/img/wheel.png" alt="Wheel"
+       class="wheel"
+       :class="{ stopped: isSpinning }"
+       :style="{ transform: `rotate(${initialRotation + wheelRotation}deg)` }"
+       ref="wheel">
+  <div class="pointer"></div>
+
+</div>
+<div v-if="countdown > 0" class="countdown-timer">
+  <div class="timer-display">
+      <span class="timer-label">Please Wait</span>
+    <span class="timer-value">{{countdown}}</span>
+    <span class="timer-label">seconds</span>
+  </div>
+</div>
 <div class="notifications-wrapper">
     <div v-for="(notification, index) in notifications"
          :key="index"
@@ -38,12 +82,14 @@
 </template>
 
 <script>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import gsap from 'gsap'
+import Pusher from 'pusher-js';
 
 export default {
   name: 'SpinWheel',
-  setup() {
+    setup() {
+
     const wheel = ref(null)
     const isSpinning = ref(false)
     const selectedColor = ref(null)
@@ -51,7 +97,11 @@ export default {
     const userBalance = ref(window.auth?.user?.wallet_balance || 0)
     const isLoggedIn = ref(window.auth?.isLoggedIn || false)
     const demoBalance = ref(1000)
-const notifications = ref([])
+        const notifications = ref([])
+        const wheelRotation = ref(0)
+        const countdown = ref(5) // 10 seconds countdown
+const countdownInterval = ref(null)
+const initialRotation = ref(0)
     const segments = ref([
       { color: 'red', multiplier: 2 },
       { color: 'black', multiplier: 2 },
@@ -66,6 +116,17 @@ const notifications = ref([])
       { color: 'magenta', multiplier: 9 },
       { color: 'lime', multiplier: 2 }
     ])
+    const lastResults = ref([])
+const stats = ref({
+  totalGames: 0,
+  highestWin: 0,
+  greenRate: 0,
+  avgMultiplier: 0
+})
+
+
+
+
 
     const canBet = computed(() => {
       if (isLoggedIn.value) {
@@ -74,26 +135,82 @@ const notifications = ref([])
       return !isSpinning.value && selectedColor.value && betAmount.value > 0 && betAmount.value <= demoBalance.value
     })
 
-    const spinWheel = (result) => {
-      isSpinning.value = true
-      const wheelElement = wheel.value
+     const spinWheel = (result) => {
+  isSpinning.value = true
+  const wheelElement = wheel.value
 
-      const rotations = 5
-      const segmentAngle = 360 / segments.value.length
-      const targetSegment = segments.value.findIndex(s => s.color === result)
-      const targetAngle = targetSegment * segmentAngle
+  const rotations = 5
+  const segmentAngle = 360 / segments.value.length
+  const targetSegment = segments.value.findIndex(s => s.color === result)
+  // Calculate exact angle needed to point to the winning color
+  const targetAngle = 360 - (targetSegment * segmentAngle)
+  const totalRotation = rotations * 360 + targetAngle
 
-      gsap.to(wheelElement, {
-        rotation: `+=${rotations * 360 + targetAngle}`,
-        duration: 5,
-        ease: "power2.out",
-        onComplete: () => {
-          isSpinning.value = false
-          handleSpinResult(result)
-          wheelElement.style.transform = ''
-        }
-      })
+  wheelRotation.value = totalRotation
+
+  gsap.to(wheelRotation, {
+    value: totalRotation,
+    duration: 5,
+    ease: "power2.out",
+    onComplete: () => {
+      isSpinning.value = false
+      handleSpinResult(result)
     }
+  })
+     }
+
+     // Calculate initial position based on last result
+const setInitialPosition = (color) => {
+  const segmentAngle = 360 / segments.value.length
+  const segmentIndex = segments.value.findIndex(s => s.color === color)
+  initialRotation.value = -(segmentIndex * segmentAngle)
+}
+
+
+            // Initialize Pusher
+            const pusher = new Pusher('87892ed076b91483ee2a', {
+                cluster: 'mt1'
+            })
+
+            // Subscribe to spin-game channel
+            const chl = pusher.subscribe('spin-game')
+
+            // Log connection status
+            chl.bind('pusher:subscription_succeeded', () => {
+                console.log('Successfully connected to spin-game chl')
+            })
+
+            chl.bind('pusher:subscription_error', (error) => {
+                console.error('Failed to connect to spin-game chl:', error)
+            })
+
+           // Listen for SpinResult event
+chl.bind('SpinResult', (data) => {
+    console.log('Received spin result:', data)
+  startCountdown()
+    lastResults.value.unshift({
+        color: data.result_color,
+        multiplier: data.multiplier
+    })
+    if (lastResults.value.length > 6) {
+        lastResults.value.pop()
+    }
+    updateStats(data)
+
+
+      setInitialPosition(data.result_color) // Set initial position
+    spinWheel(data.result_color)
+
+    // Only show notifications if player placed a bet
+    if (selectedColor.value) {
+        if (selectedColor.value === data.result_color) {
+            const winAmount = betAmount.value * data.multiplier
+            showWinNotification(winAmount)
+        } else {
+            showLoseNotification(betAmount.value)
+        }
+    }
+})
 
     const placeBet = async () => {
       if (!canBet.value) return
@@ -123,23 +240,38 @@ const notifications = ref([])
     }
 
     const handleSpinResult = (result) => {
-      const winningSegment = segments.value.find(s => s.color === result)
+  // Only process result if player placed a bet
+  if (selectedColor.value) {
+    const winningSegment = segments.value.find(s => s.color === result)
 
-      if (selectedColor.value === result) {
-        const winAmount = betAmount.value * winningSegment.multiplier
-        if (isLoggedIn.value) {
-          userBalance.value += winAmount
-        } else {
-          demoBalance.value += winAmount
-        }
-        showWinNotification(winAmount)
+    if (selectedColor.value === result) {
+      const winAmount = betAmount.value * winningSegment.multiplier
+      if (isLoggedIn.value) {
+        userBalance.value += winAmount
       } else {
-        showLoseNotification(betAmount.value)
+        demoBalance.value += winAmount
       }
-
-      selectedColor.value = null
-      betAmount.value = 10
+      showWinNotification(winAmount)
+    } else {
+      showLoseNotification(betAmount.value)
     }
+
+    selectedColor.value = null
+    betAmount.value = 10
+  }
+}
+
+
+const startCountdown = () => {
+  countdown.value = 5
+  countdownInterval.value = setInterval(() => {
+    countdown.value--
+    if (countdown.value <= 0) {
+      clearInterval(countdownInterval.value)
+    }
+  }, 1000)
+}
+
 
     const showWinNotification = (amount) => {
     notifications.value.push({
@@ -171,6 +303,24 @@ const showLoseNotification = (amount) => {
       }
     }
 
+const updateStats = (data) => {
+    stats.value.totalGames++
+    stats.value.highestWin = Math.max(stats.value.highestWin, data.multiplier * betAmount.value)
+
+    const greenGames = lastResults.value.filter(r => r.color === 'green').length
+    stats.value.greenRate = ((greenGames / lastResults.value.length) * 100).toFixed(1)
+
+    const totalMultiplier = lastResults.value.reduce((sum, r) => sum + r.multiplier, 0)
+    stats.value.avgMultiplier = (totalMultiplier / lastResults.value.length).toFixed(2)
+}
+
+// Clean up on component unmount
+onUnmounted(() => {
+  if (countdownInterval.value) {
+    clearInterval(countdownInterval.value)
+  }
+})
+
     return {
       wheel,
       isSpinning,
@@ -184,7 +334,12 @@ const showLoseNotification = (amount) => {
       userBalance,
       isLoggedIn,
         demoBalance,
-       notifications
+        notifications,
+       wheelRotation,
+        initialRotation,
+ lastResults,
+        stats,
+  countdown
     }
   }
 }
@@ -385,4 +540,100 @@ const showLoseNotification = (amount) => {
     }
 }
 
+.game-stats {
+  margin: 20px auto;
+  max-width: 800px;
+}
+
+.stats-container {
+  background: #333;
+  border-radius: 8px;
+  padding: 15px;
+  color: white;
+}
+
+.recent-results {
+  margin-bottom: 20px;
+}
+
+.recent-results h3 {
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+}
+
+.result-dots {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.result-dot {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+}
+
+@media (min-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.stat-box {
+  background: #444;
+  padding: 15px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.stat-value {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+.countdown-timer {
+  text-align: center;
+  margin: 20px 0;
+}
+
+.timer-display {
+  background: #333;
+  display: inline-flex;
+  flex-direction: column;
+  padding: 15px 25px;
+  border-radius: 8px;
+  color: white;
+}
+
+.timer-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #3498db;
+}
+
+.timer-label {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
 </style>
+
+
+

@@ -29,11 +29,28 @@ class SpinGameController extends Controller
             return response()->json(['error' => 'No active game'], 422);
         }
 
+        // Get multiplier based on color
+        $multipliers = [
+            'red' => 2,
+            'black' => 2,
+            'green' => 14,
+            'yellow' => 3,
+            'blue' => 5,
+            'purple' => 2,
+            'orange' => 2,
+            'pink' => 7,
+            'cyan' => 2,
+            'brown' => 2,
+            'magenta' => 9,
+            'lime' => 2
+        ];
+
         $bet = SpinBet::create([
             'user_id' => $user->id,
             'spin_game_id' => $currentGame->id,
             'amount' => $validated['amount'],
             'color' => $validated['color'],
+            'multiplier' => $multipliers[$validated['color']],
             'status' => 'pending'
         ]);
 

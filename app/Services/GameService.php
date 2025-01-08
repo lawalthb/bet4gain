@@ -12,9 +12,11 @@ use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
+use Pusher\ApiErrorException;
+
 class GameService
 {
-    private $pusher;
+
 
     private $segments = [
         ['color' => 'red', 'multiplier' => 2],
@@ -31,6 +33,8 @@ class GameService
         ['color' => 'lime', 'multiplier' => 2]
     ];
 
+    private $pusher;
+
     public function __construct()
     {
         $this->pusher = new Pusher(
@@ -44,6 +48,54 @@ class GameService
         );
         Log::info('GameService initialized');
     }
+
+    private function handlePusherQuotaExceeded() {
+        // Get current active set
+        $currentSet = Setting::get('active_pusher_set', 1);
+
+        // Calculate next set (1-4)
+        $nextSet = ($currentSet % 4) + 1;
+
+        // Update Pusher credentials
+        Setting::updateOrCreate(['key' => 'pusher_app_id'], ['value' => Setting::get("pusher_app_id_{$nextSet}")]);
+        Setting::updateOrCreate(['key' => 'pusher_key'], ['value' => Setting::get("pusher_key_{$nextSet}")]);
+        Setting::updateOrCreate(['key' => 'pusher_secret'], ['value' => Setting::get("pusher_secret_{$nextSet}")]);
+        Setting::updateOrCreate(['key' => 'pusher_email'], ['value' => Setting::get("pusher_email_{$nextSet}")]);
+        Setting::updateOrCreate(['key' => 'active_pusher_set'], ['value' => $nextSet]);
+
+        // Reinitialize Pusher with new credentials
+        $this->pusher = new Pusher(
+            Setting::get('pusher_key'),
+            Setting::get('pusher_secret'),
+            Setting::get('pusher_app_id'),
+            [
+                'cluster' => Setting::get('pusher_cluster'),
+                'useTLS' => true
+            ]
+        );
+    }
+
+    public function trigger($channel, $event, $data) {
+        try {
+            $this->pusher->trigger($channel, $event, $data);
+        } catch (ApiErrorException $e) {
+            if (strpos($e->getMessage(), 'quota exceeded') !== false) {
+                $this->handlePusherQuotaExceeded();
+                // Retry with new credentials
+                $this->pusher->trigger($channel, $event, $data);
+            } else {
+                throw $e;
+            }
+        }
+    }
+    public function spinWheel()
+    {
+        // Generate random result from segments
+        $index = random_int(0, count($this->segments) - 1);
+        return $this->segments[$index];
+    }
+
+
 
     public function startNewGame()
     {
@@ -212,13 +264,6 @@ class GameService
     }
 
 
-    private function spinWheel()
-    {
-        // Generate random result
-        $index = random_int(0, count($this->segments) - 1);
-        return $this->segments[$index];
-    }
-
     private function getMultiplier($color)
     {
         foreach ($this->segments as $segment) {
@@ -243,4 +288,35 @@ class GameService
             ->take(10)
             ->get(['id', 'name', 'wallet_balance']);
     }
+
+
+
+    public function processSpinResults($game)
+    {
+        $result = $this->spinWheel();
+
+        $this->pusher->trigger('spin-game', 'SpinResult', [
+            'game_id' => $game->id,
+            'result' => $result
+        ]);
+
+        // Process all pending bets
+        $game->bets()->where('status', 'pending')->each(function ($bet) use ($result) {
+            $winAmount = 0;
+            if ($bet->color === $result['color']) {
+                $multiplier = $this->getMultiplier($result['color']);
+                $winAmount = $bet->amount * $multiplier;
+
+                // Update user balance
+                $bet->user->increment('wallet_balance', $winAmount);
+            }
+
+            $bet->update([
+                'status' => 'completed',
+                'win_amount' => $winAmount
+            ]);
+        });
+    }
+
 }
+

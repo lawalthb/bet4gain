@@ -14,6 +14,7 @@ use App\Http\Controllers\WalletController;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Support\Facades\Artisan;
 
 Route::get('/', function () {
     return view('game');
@@ -130,3 +131,45 @@ Route::get('/settings', function () {
         'pusher_cluster' => Setting::get('pusher_cluster')
     ]);
 })->name('settings')->middleware('web');
+
+
+Route::get('/broadcast-test', function () {
+    broadcast(new \App\Events\TestEvent('Hello from Reverb!'));
+    return "Event broadcasted";
+});
+
+
+Route::get('/test-event', function () {
+    $game = App\Models\Game::latest()->first();
+    broadcast(new App\Events\GameStarted($game))->toOthers();
+    return "Event broadcasted";
+});
+
+
+Route::get('/reverb-test', function () {
+    return view('reverb-test');
+});
+
+
+
+Route::get('/update-betonline', function () {
+    Artisan::call('pusher:betonline');
+    return "Pusher credentials updated to Betonline successfully";
+});
+
+Route::get('/update-aishat', function () {
+    Artisan::call('pusher:aishat');
+    return "Pusher credentials updated to aishat successfully";
+});
+
+
+Route::get('/update-lawal', function () {
+    Artisan::call('pusher:lawal');
+    return "Pusher credentials updated to lawal successfully";
+});
+
+Route::get('/update-debby', function () {
+    Artisan::call('pusher:debby');
+    return "Pusher credentials updated to debby successfully";
+});
+
