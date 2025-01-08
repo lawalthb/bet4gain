@@ -22,8 +22,8 @@ class UpdatePusherSettings extends Command
      */
     protected $description = 'Update Pusher settings from remote source';
     /**
-      * Execute the console command.
-      */
+     * Execute the console command.
+     */
     public function handle()
     {
         // Get current active set (1 or 2)
@@ -36,13 +36,13 @@ class UpdatePusherSettings extends Command
         $newAppId = Setting::get("pusher_app_id_{$newSet}");
         $newKey = Setting::get("pusher_key_{$newSet}");
         $newSecret = Setting::get("pusher_secret_{$newSet}");
-        $newSecret = Setting::get("pusher_email_{$newSet}");
+        $newEmail = Setting::get("pusher_email_{$newSet}");
 
         // Update active credentials
         Setting::updateOrCreate(['key' => 'pusher_app_id'], ['value' => $newAppId]);
         Setting::updateOrCreate(['key' => 'pusher_key'], ['value' => $newKey]);
         Setting::updateOrCreate(['key' => 'pusher_secret'], ['value' => $newSecret]);
-        Setting::updateOrCreate(['key' => 'pusher_email'], ['value' => $newSecret]);
+        Setting::updateOrCreate(['key' => 'pusher_email'], ['value' => $newEmail]);
 
         // Update the active set indicator
         Setting::updateOrCreate(['key' => 'active_pusher_set'], ['value' => $newSet]);

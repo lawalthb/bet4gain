@@ -12,20 +12,9 @@ class StopGameLoop extends Command
 
     public function handle()
     {
-        $result = Process::run('ps aux | grep "[g]ame:run"');
-        $processes = array_filter(explode("\n", $result->output()));
+        $this->info('Stopping existing game loop...');
 
-        if (empty($processes)) {
-            $this->info('No game loop processes found running.');
-            return;
-        }
-
-        foreach ($processes as $process) {
-            $pid = preg_split('/\s+/', trim($process))[1];
-            Process::run("kill {$pid}");
-            $this->info("Stopped game loop process {$pid}");
-        }
-
-        $this->info('All game loop processes have been stopped.');
+        // Kill existing game:run processes on Linux
+        exec('killall -9 "php artisan game:run"');
     }
 }
