@@ -592,7 +592,7 @@ const handleBotBets = () => {
         const botBet = {
             id: `bot-${i}`,
             name: randomName,
-            amount: Math.floor(Math.random() * 90) + 10,
+           amount: Math.floor(Math.random() * (5000 - 100 + 1)) + 100,
             autoCashout: (Math.random() * 3 + 1.2).toFixed(2)
         }
         botBets.value.push(botBet)
