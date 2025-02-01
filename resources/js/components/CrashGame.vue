@@ -66,7 +66,7 @@
 </div>
 
 
-      <div v-if="!isGameActive && !hasCrashed" class="status">
+      <div v-if="!isGameActive && !hasCrashed && !currentMultiplier" class="status">
         <br />
          <br />
           <br />
@@ -592,7 +592,7 @@ const handleBotBets = () => {
         const botBet = {
             id: `bot-${i}`,
             name: randomName,
-           amount: Math.floor(Math.random() * (5000 - 100 + 1)) + 100,
+           amount: Math.floor(Math.random() * (1000 - 100 + 1)) + 100,
             autoCashout: (Math.random() * 3 + 1.2).toFixed(2)
         }
         botBets.value.push(botBet)
