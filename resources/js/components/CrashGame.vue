@@ -60,37 +60,50 @@
             </div>
         </div>
         <div class="game-canvas" ref="gameCanvas">
-            <div class="flight-path" ref="flightPath"></div>
-
-            <div class="active-bets" v-if="botBets.length > 0">
-                <div v-for="bot in botBets" :key="bot.id" class="bot-bet">
-                    <span class="bot-name">{{ bot.name }}</span>
-                    <span class="bot-amount">₦{{ bot.amount }}</span>
+            <template v-if="!showGameContent">
+                <div class="loading-container">
+                   <img src="/resources/img/bet4gain-preload.png" alt="Loading" class="preload-image" />
                 </div>
-            </div>
+            </template>
+            <template v-else>
+                <div class="flight-path" ref="flightPath"></div>
 
-            <div class="rocket-container" ref="airplane" :style="rocketStyle">
-                <img src="/resources/img/rocket223.png" alt="rocket" />
-            </div>
-            <div class="multiplier" :class="{ crashed: hasCrashed }">
-                {{ currentMultiplier.toFixed(2) }}x
-            </div>
+                <div class="active-bets" v-if="botBets.length > 0">
+                    <div v-for="bot in botBets" :key="bot.id" class="bot-bet">
+                        <span class="bot-name">{{ bot.name }}</span>
+                        <span class="bot-amount">₦{{ bot.amount }}</span>
+                    </div>
+                </div>
 
-            <div
-                v-if="!isGameActive && !hasCrashed && showCountdown"
-                class="status"
-            >
-                <br />
-                <br />
-                <br />
-                Starting in {{ countdown }}s
-            </div>
-            <div v-if="hasCrashed" class="crash-point">
-                <br />
-                <br />
-                <br />
-                Crashed!
-            </div>
+                <div
+                    class="rocket-container"
+                    ref="airplane"
+                    :style="rocketStyle"
+                >
+                    <img src="/resources/img/rocket223.png" alt="rocket" />
+                </div>
+
+                <div class="multiplier" :class="{ crashed: hasCrashed }">
+                    {{ currentMultiplier.toFixed(2) }}x
+                </div>
+
+                <div
+                    v-if="!isGameActive && !hasCrashed && showCountdown"
+                    class="status"
+                >
+                    <br />
+                    <br />
+                    <br />
+                    Starting in {{ countdown }}s
+                </div>
+
+                <div v-if="hasCrashed" class="crash-point">
+                    <br />
+                    <br />
+                    <br />
+                    Crashed!
+                </div>
+            </template>
         </div>
 
         <div class="betting-panel">
@@ -187,7 +200,7 @@ export default {
         const botBets = ref([]); // Track bot bets
         const countdownTimer = ref(null);
         const showCountdown = ref(false);
-
+        const showGameContent = ref(false);
         const isLoggedIn = ref(window.auth.isLoggedIn);
         const userBalance = ref(
             window.auth.user ? window.auth.user.wallet_balance : 0
@@ -281,6 +294,7 @@ export default {
             hasCrashed.value = false;
             currentMultiplier.value = 1.0;
             showCountdown.value = false;
+            showGameContent.value = true;
             handleBotBets();
             // Reset rocket state
             // Set initial rocket position at bottom center
@@ -743,6 +757,7 @@ export default {
             handleBotBets,
             handleBotCashouts,
             showCountdown,
+            showGameContent,
         };
     },
 };
@@ -1167,5 +1182,25 @@ input[type="number"] {
 
 .multiplier.crashed {
     animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.loading-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.preload-image {
+    max-width: 200px;
+    height: auto;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
 }
 </style>
