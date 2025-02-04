@@ -3,6 +3,10 @@
 @section('content')
 <div class="min-h-screen flex items-center justify-center bg-gray-100">
     <div class="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow">
+        <div class="text-center">
+            <img src="{{ asset('assets/images/bet4gain-preload.png') }}" alt="Bet4Gain" class="mx-auto h-20 w-auto">
+        
+        </div>
         <div>
             <h2 class="text-center text-3xl font-extrabold text-gray-900">Admin Login</h2>
         </div>

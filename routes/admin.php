@@ -52,6 +52,8 @@ Route::middleware(['auth:admin'])->group(function () {
     Route::get('/settings/pusher', [GameSettingsController::class, 'pusherSettings'])->name('admin.settings.pusher');
     Route::post('/settings/pusher', [GameSettingsController::class, 'updatePusherSettings'])->name('admin.settings.pusher.update');
 
+      Route::get('/admin/settings', [GameSettingsController::class, 'index'])->name('admin.settings');
+
 });
 
 

@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="min-h-screen flex items-center justify-center bg-gray-100">
-    <div class="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow">
+<div class="min-h-screen flex items-center justify-center">
+    <div class="max-w-md  rounded-lg shadow" style="margin-top: -300px;">
         <div class="text-center">
             <img src="{{ asset('assets/images/bet4gain-preload.png') }}"
                  alt="Bet4Gain"
