@@ -9,7 +9,8 @@
 
         <div class="mb-4">
             <label class="block mb-2">Name</label>
-            <input type="text" name="name" class="w-full p-2 rounded bg-gray-700" required>
+            <input type="text" pattern="[A-Za-z\s]+"
+    title="Only letters and spaces allowed" name="name" class="w-full p-2 rounded bg-gray-700" required>
         </div>
         <div class="mb-4">
             <label class="block mb-2">Phone Number</label>
