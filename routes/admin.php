@@ -35,7 +35,7 @@ Route::middleware(['auth:admin'])->group(function () {
     Route::post('/games/spin', [GameSettingsController::class, 'updateSpinWheel'])->name('admin.games.spin.update');
 
     // Transactions
-    Route::get('/transactions', [TransactionController::class, 'index'])->name('admin.transactions');
+    Route::get('/transactions', [TransactionController::class, 'index'])->name('admin.transactions.index');
     Route::get('/transactions/pending', [TransactionController::class, 'pending'])->name('admin.transactions.pending');
     Route::post('/transactions/{transaction}/approve', [TransactionController::class, 'approve'])->name('admin.transactions.approve');
     Route::post('/transactions/{transaction}/reject', [TransactionController::class, 'reject'])->name('admin.transactions.reject');

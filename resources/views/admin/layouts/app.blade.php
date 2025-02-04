@@ -18,7 +18,7 @@
                     <a href="{{ route('admin.dashboard') }}" class="block p-4 hover:bg-gray-700">Dashboard</a>
                     <a href="{{ route('admin.users.index') }}" class="block p-4 hover:bg-gray-700">Users</a>
                     <a href="{{ route('admin.admins.index') }}" class="block p-4 hover:bg-gray-700">Manage Admins</a>
-                    <a href="{{ route('admin.transactions') }}" class="block p-4 hover:bg-gray-700">Transactions</a>
+                    <a href="{{ route('admin.transactions.index') }}" class="block p-4 hover:bg-gray-700">Transactions</a>
                     <a href="{{ route('admin.games.crash') }}" class="block p-4 hover:bg-gray-700">Crash Game</a>
                     <a href="{{ route('admin.games.spin') }}" class="block p-4 hover:bg-gray-700">Spin Wheel</a>
                     <a href="{{ route('admin.settings') }}" class="block p-4 hover:bg-gray-700">Settings</a>

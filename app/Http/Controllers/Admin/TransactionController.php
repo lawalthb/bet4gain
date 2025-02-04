@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
+use Illuminate\Http\Request;
+
 class TransactionController extends Controller
 {
     public function pending()
@@ -22,14 +24,37 @@ class TransactionController extends Controller
         return back();
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $transactions = Transaction::with('user')
-            ->latest()
-            ->paginate(20);
+        $query = Transaction::with('user');
 
-        return view('admin.transactions.index', compact('transactions'));
+        if ($request->type) {
+            $query->where('type', $request->type);
+        }
+
+        if ($request->status) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->date_range) {
+            $dates = explode(' to ', $request->date_range);
+            $query->whereBetween('created_at', $dates);
+        }
+
+        $totalAmount = $query->sum('amount');
+        $transactions = $query->latest()->paginate(20);
+
+        $chartData = [
+            'daily' => Transaction::selectRaw('DATE(created_at) as date, SUM(amount) as total')
+                ->groupBy('date')
+                ->orderBy('date')
+                ->pluck('total', 'date'),
+
+            'status' => Transaction::selectRaw('status, COUNT(*) as count')
+                ->groupBy('status')
+                ->get()
+        ];
+
+        return view('admin.transactions.index', compact('transactions', 'chartData', 'totalAmount'));
     }
-
 }
-
