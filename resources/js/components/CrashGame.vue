@@ -1,178 +1,200 @@
 <template>
-    <div class="crash-game">
-        <div class="game-stats bg-gray-800 rounded-lg p-4 shadow-lg">
-            <div class="current-stats grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="stat-card bg-gray-700 p-3 rounded-lg">
-                    <div class="text-gray-400 text-sm">Players</div>
-                    <div class="text-xl font-bold">{{ activePlayers }}</div>
-                </div>
-
-                <div class="stat-card bg-gray-700 p-3 rounded-lg">
-                    <div class="text-gray-400 text-sm">Total Bets</div>
-                    <div class="text-xl font-bold">₦{{ totalBets }}</div>
-                </div>
-
-                <div class="stat-card bg-gray-700 p-3 rounded-lg">
-                    <div class="text-gray-400 text-sm">Balance</div>
-                    <div class="text-xl font-bold" v-if="isLoggedIn">
-                        ₦{{ userBalance }}
-                    </div>
-                    <div class="text-xl font-bold" v-else>
-                        ₦{{ demoBalance }}
-                    </div>
-                </div>
-            </div>
-
-            <div class="previous-crashes mt-4 flex flex-wrap gap-2">
-                <span
-                    v-for="(crash, index) in previousCrashes"
-                    :key="index"
-                    :class="{
-                        'high-crash': crash > 2,
-                        'bg-gray-700 px-3 py-1 rounded-full text-sm font-medium': true,
-                    }"
-                >
-                    {{ crash.toFixed(2) }}x
-                </span>
-            </div>
-        </div>
-        <!-- Add this notification section -->
-        <div class="notifications-wrapper">
-            <div
-                v-for="(notification, index) in notifications"
-                :key="index"
-                :class="['game-notification', notification.type]"
-            >
-                <div class="notification-content">
-                    <span :class="`${notification.type}-amount`">
-                        {{ notification.type === "win" ? "+" : "-" }}₦{{
-                            notification.amount.toFixed(2)
-                        }}
-                    </span>
-                    <span :class="`${notification.type}-text`">
-                        {{
-                            notification.type === "win"
-                                ? "Winner!"
-                                : "Better luck next time!"
-                        }}
-                    </span>
-                </div>
-            </div>
-        </div>
-        <div class="game-canvas" ref="gameCanvas">
-            <template v-if="!showGameContent">
-                <div class="loading-container">
-                   <img src="/resources/img/bet4gain-preload.png" alt="Loading" class="preload-image" />
-                </div>
-            </template>
-            <template v-else>
-                <div class="flight-path" ref="flightPath"></div>
-
-                <div class="active-bets" v-if="botBets.length > 0">
-                    <div v-for="bot in botBets" :key="bot.id" class="bot-bet">
-                        <span class="bot-name">{{ bot.name }}</span>
-                        <span class="bot-amount">₦{{ bot.amount }}</span>
-                    </div>
-                </div>
-
+    <div class="crash-game-wrapper">
+        <div class="crash-game">
+            <div class="game-stats bg-gray-800 rounded-lg p-4 shadow-lg">
                 <div
-                    class="rocket-container"
-                    ref="airplane"
-                    :style="rocketStyle"
+                    class="current-stats grid grid-cols-2 md:grid-cols-4 gap-4"
                 >
-                    <img src="/resources/img/rocket223.png" alt="rocket" />
-                </div>
-
-                <div class="multiplier" :class="{ crashed: hasCrashed }">
-                    {{ currentMultiplier.toFixed(2) }}x
-                </div>
-
-                <div
-                    v-if="!isGameActive && !hasCrashed && showCountdown"
-                    class="status"
-                >
-                    <br />
-                    <br />
-                    <br />
-                    Starting in {{ countdown }}s
-                </div>
-
-                <div v-if="hasCrashed" class="crash-point">
-                    <br />
-                    <br />
-                    <br />
-                    Crashed!
-                </div>
-            </template>
-        </div>
-
-        <div class="betting-panel">
-            <div class="bet-controls-container">
-                <div class="input-group">
-                    <div class="amount-input">
-                        <label>Amount </label>
-                        <input
-                            type="number"
-                            v-model="betAmount"
-                            :disabled="isGameActive"
-                            min="1"
-                            :max="userBalance"
-                        />
+                    <div class="stat-card bg-gray-700 p-3 rounded-lg">
+                        <div class="text-gray-400 text-sm">Players</div>
+                        <div class="text-xl font-bold">{{ activePlayers }}</div>
                     </div>
 
-                    <div class="cashout-input">
-                        <label>Cashout (x)</label>
-                        <div class="cashout-controls">
-                            <input
-                                type="number"
-                                v-model="autoCashoutPoint"
-                                :disabled="!autoEnabled"
-                                step="0.1"
-                                min="1.1"
-                            />
+                    <div class="stat-card bg-gray-700 p-3 rounded-lg">
+                        <div class="text-gray-400 text-sm">Total Bets</div>
+                        <div class="text-xl font-bold">₦{{ totalBets }}</div>
+                    </div>
+
+                    <div class="stat-card bg-gray-700 p-3 rounded-lg">
+                        <div class="text-gray-400 text-sm">Balance</div>
+                        <div class="text-xl font-bold" v-if="isLoggedIn">
+                            ₦{{ userBalance }}
+                        </div>
+                        <div class="text-xl font-bold" v-else>
+                            ₦{{ demoBalance }}
                         </div>
                     </div>
                 </div>
 
-                <div class="controls-row">
-                    <div class="quick-amounts">
-                        <button @click="quickBet(5)">₦5</button>
-                        <button @click="quickBet(10)">₦10</button>
-                        <button @click="quickBet(50)">₦50</button>
-                        <button @click="betHalf">1/2</button>
-                        <button @click="betDouble">2x</button>
-                        <button @click="betMax">Max</button>
-                    </div>
-
-                    <div class="auto-cashout-toggle">
-                        <label>
-                            <input
-                                type="checkbox"
-                                v-model="autoEnabled"
-                                :disabled="isGameActive"
-                            />
-                            Auto Cashout
-                        </label>
+                <div class="previous-crashes mt-4 flex flex-wrap gap-2">
+                    <span
+                        v-for="(crash, index) in previousCrashes"
+                        :key="index"
+                        :class="{
+                            'high-crash': crash > 2,
+                            'bg-gray-700 px-3 py-1 rounded-full text-sm font-medium': true,
+                        }"
+                    >
+                        {{ crash.toFixed(2) }}x
+                    </span>
+                </div>
+            </div>
+            <!-- Add this notification section -->
+            <div class="notifications-wrapper">
+                <div
+                    v-for="(notification, index) in notifications"
+                    :key="index"
+                    :class="['game-notification', notification.type]"
+                >
+                    <div class="notification-content">
+                        <span :class="`${notification.type}-amount`">
+                            {{ notification.type === "win" ? "+" : "-" }}₦{{
+                                notification.amount.toFixed(2)
+                            }}
+                        </span>
+                        <span :class="`${notification.type}-text`">
+                            {{
+                                notification.type === "win"
+                                    ? "Winner!"
+                                    : "Better luck next time!"
+                            }}
+                        </span>
                     </div>
                 </div>
             </div>
-            <div class="action-buttons">
-                <button
-                    class="bet-button"
-                    @click="placeBet"
-                    :disabled="!canPlaceBet"
-                    v-if="!hasActiveBet"
-                >
-                    Place Bet
-                </button>
-                <button
-                    class="cashout-button"
-                    @click="cashOut"
-                    :disabled="!canCashOut"
-                    v-else
-                >
-                    Cash Out ({{ (betAmount * currentMultiplier).toFixed(2) }})
-                </button>
+            <div class="game-canvas" ref="gameCanvas">
+                <template v-if="!showGameContent">
+                    <div class="loading-container">
+                        <img
+                            src="/resources/img/bet4gain-preload.png"
+                            alt="Loading"
+                            class="preload-image"
+                        />
+                    </div>
+                </template>
+                <template v-else>
+                    <div class="flight-path" ref="flightPath"></div>
+
+                    <div class="active-bets" v-if="botBets.length > 0">
+                        <div
+                            v-for="bot in botBets"
+                            :key="bot.id"
+                            class="bot-bet"
+                        >
+                            <span class="bot-name">{{ bot.name }}</span>
+                            <span class="bot-amount">₦{{ bot.amount }}</span>
+                        </div>
+                    </div>
+
+                    <div
+                        class="rocket-container"
+                        ref="airplane"
+                        :style="rocketStyle"
+                    >
+                        <img src="/resources/img/rocket223.png" alt="rocket" />
+                    </div>
+
+                    <div
+                        class="multiplier"
+                        :class="{ crashed: hasCrashed }"
+                        v-if="!showCountdown"
+                    >
+                        {{ currentMultiplier.toFixed(2) }}x
+                    </div>
+
+                    <div
+                        v-if="!isGameActive && !hasCrashed && showCountdown"
+                        class="status"
+                    >
+                       
+                        Starting in {{ countdown }}s
+                    </div>
+
+                    <div v-if="hasCrashed" class="crash-point">
+                        <br />
+                        <br />
+                        <br />
+                        Crashed!
+                    </div>
+                </template>
+            </div>
+
+            <div class="betting-panel">
+                <div class="bet-controls-container">
+                    <div class="input-group">
+                        <div class="amount-input">
+                            <label>Amount </label>
+                            <input
+                                type="number"
+                                v-model="betAmount"
+                                :disabled="!autoEnabled"
+                                min="1"
+                                :max="userBalance"
+                            />
+                        </div>
+
+                        <div class="cashout-input">
+                            <label>Cashout (x)</label>
+                            <div class="cashout-controls">
+                                <input
+                                    type="number"
+                                    v-model="autoCashoutPoint"
+                                    :disabled="!autoEnabled"
+                                    step="0.1"
+                                    min="1.1"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="controls-row">
+                        <div class="quick-amounts">
+                            <button @click="quickBet(5)">₦5</button>
+                            <button @click="quickBet(10)">₦10</button>
+                            <button @click="quickBet(50)">₦50</button>
+                            <button @click="betHalf">1/2</button>
+                            <button @click="betDouble">2x</button>
+                            <button @click="betMax">Max</button>
+                        </div>
+
+                        <div class="auto-cashout-toggle">
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    v-model="autoEnabled"
+                                    :disabled="isGameActive"
+                                />
+                                Auto Cashout
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="action-buttons">
+                    <button
+                        class="bet-button"
+                        @click="placeBet"
+                        :disabled="!canPlaceBet"
+                        v-if="!hasActiveBet"
+                    >
+                        {{
+                            betPlaced
+                                ? "Bet Placed"
+                                : isGameActive
+                                ? "Please Waiting"
+                                : "Place Bet"
+                        }}
+                    </button>
+                    <button
+                        class="cashout-button"
+                        @click="cashOut"
+                        :disabled="!canCashOut"
+                        v-else
+                    >
+                        Cash Out (₦{{
+                            (betAmount * currentMultiplier).toFixed(2)
+                        }})
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -202,6 +224,7 @@ export default {
         const showCountdown = ref(false);
         const showGameContent = ref(false);
         const isLoggedIn = ref(window.auth.isLoggedIn);
+        const betPlaced = ref(false);
         const userBalance = ref(
             window.auth.user ? window.auth.user.wallet_balance : 0
         );
@@ -299,8 +322,8 @@ export default {
             // Reset rocket state
             // Set initial rocket position at bottom center
             rocketPosition.value = {
-                x: 50,
-                y: gameCanvas.value.clientHeight - 100,
+                x: 10,
+                y: gameCanvas.value.clientHeight - 10,
             };
             rocketRotation.value = -15;
             rocketScale.value = 1;
@@ -364,7 +387,7 @@ export default {
             hasCrashed.value = true;
             crashPoint.value = finalMultiplier;
             currentMultiplier.value = finalMultiplier;
-
+            canCashOut.value = false;
             const canvasHeight = gameCanvas.value?.clientHeight || 400;
 
             // Enhanced crash animation sequence
@@ -528,13 +551,15 @@ export default {
         const placeBet = async () => {
             if (!isGameActive.value && betAmount.value > 0) {
                 // Handle demo betting
+                currentMultiplier.value = 0;
                 if (!isLoggedIn.value) {
                     if (betAmount.value <= demoBalance.value) {
                         demoBalance.value -= betAmount.value;
                         hasActiveBet.value = true;
-                        canCashOut.value = true;
+                        canCashOut.value = false;
                         totalBets.value += betAmount.value;
                         activePlayers.value++;
+                        betPlaced.value = true;
                     }
                     return;
                 }
@@ -554,6 +579,7 @@ export default {
                         currentBetId.value = response.data.bet.id;
                         totalBets.value += betAmount.value;
                         activePlayers.value++;
+                        betPlaced.value = true;
                     }
                 } catch (error) {
                     console.error(
@@ -630,6 +656,7 @@ export default {
         };
 
         const showWinNotification = (amount) => {
+            canCashOut.value = false;
             notifications.value.push({
                 type: "win",
                 amount: amount,
@@ -758,22 +785,30 @@ export default {
             handleBotCashouts,
             showCountdown,
             showGameContent,
+            placeBet,
         };
     },
 };
 </script>
 
 <style scoped>
+.crash-game-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 .crash-game {
     width: 100%;
     max-width: 800px;
+    transform-origin: top center;
     margin: 0 auto;
     padding: 20px;
     background: #1a1a1a;
     border-radius: 12px;
     color: white;
 }
-
 .game-stats {
     display: flex;
     justify-content: space-between;
@@ -1199,8 +1234,14 @@ input[type="number"] {
 }
 
 @keyframes pulse {
-    0% { opacity: 0.6; }
-    50% { opacity: 1; }
-    100% { opacity: 0.6; }
+    0% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.6;
+    }
 }
 </style>

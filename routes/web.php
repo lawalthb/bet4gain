@@ -128,7 +128,8 @@ require __DIR__ . '/admin.php';
 Route::get('/settings', function () {
     return response()->json([
         'pusher_key' => Setting::get('pusher_key'),
-        'pusher_cluster' => Setting::get('pusher_cluster')
+        'pusher_cluster' => Setting::get('pusher_cluster'),
+        'pusher_email' => Setting::get('pusher_email')
     ]);
 })->name('settings')->middleware('web');
 

@@ -1,7 +1,8 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 p-4">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 p-4 w-full max-w-full">
+
     <div class="col-span-1 md:col-span-2">
         <div id="app"></div>
     </div>

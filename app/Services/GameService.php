@@ -19,18 +19,18 @@ class GameService
 
 
     private $segments = [
-        ['color' => 'red', 'multiplier' => 2],
-        ['color' => 'black', 'multiplier' => 2],
-        ['color' => 'green', 'multiplier' => 14],
-        ['color' => 'yellow', 'multiplier' => 3],
-        ['color' => 'blue', 'multiplier' => 5],
-        ['color' => 'purple', 'multiplier' => 2],
-        ['color' => 'orange', 'multiplier' => 2],
-        ['color' => 'pink', 'multiplier' => 7],
-        ['color' => 'cyan', 'multiplier' => 2],
-        ['color' => 'brown', 'multiplier' => 2],
-        ['color' => 'magenta', 'multiplier' => 9],
-        ['color' => 'lime', 'multiplier' => 2]
+        ['color' => 'green', 'multiplier' => 20],
+        ['color' => 'teal', 'multiplier' => 3],
+        ['color' => 'blue', 'multiplier' => 8],
+        ['color' => 'violet', 'multiplier' => 4],
+        ['color' => 'purple', 'multiplier' => 10],
+        ['color' => 'magenta', 'multiplier' => 2],
+        ['color' => 'red', 'multiplier' => 3],
+        ['color' => 'darkorange', 'multiplier' => 5],
+        ['color' => 'orange', 'multiplier' => 14],
+        ['color' => 'goldenrod', 'multiplier' => 7],
+        ['color' => 'yellow', 'multiplier' => 2],
+        ['color' => 'chartreuse', 'multiplier' => 2]
     ];
 
     private $pusher;

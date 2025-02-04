@@ -10,6 +10,23 @@ use Illuminate\Http\Request;
 
 class SpinGameController extends Controller
 {
+
+    private $wheelSegments = [
+    0 => 'red',
+    1 => 'black',
+    2 => 'green',
+    3 => 'yellow',
+    4 => 'blue',
+    5 => 'purple',
+    6 => 'orange',
+    7 => 'pink',
+    8 => 'cyan',
+    9 => 'brown',
+    10 => 'magenta',
+    11 => 'lime'
+];
+
+
     public function placeBet(Request $request)
     {
         $validated = $request->validate([
@@ -31,18 +48,18 @@ class SpinGameController extends Controller
 
         // Get multiplier based on color
         $multipliers = [
-            'red' => 2,
-            'black' => 2,
-            'green' => 14,
-            'yellow' => 3,
-            'blue' => 5,
-            'purple' => 2,
-            'orange' => 2,
-            'pink' => 7,
-            'cyan' => 2,
-            'brown' => 2,
-            'magenta' => 9,
-            'lime' => 2
+            'green' => 20,
+            'teal' => 3,
+            'blue' => 14,
+            'violet' => 4,
+            'purple' => 10,
+            'magenta' => 2,
+            'red' => 3,
+            'vermilion' => 5,
+            'orange' => 14,
+            'goldenrod' => 7,
+            'yellow' => 2,
+            'chartreuse' => 2
         ];
 
         $bet = SpinBet::create([

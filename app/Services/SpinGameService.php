@@ -10,18 +10,18 @@ use App\Events\GameSpinResult;
 class SpinGameService
 {
     private $colors = [
-        'red' => 2,
-        'black' => 2,
-        'green' => 14,
-        'yellow' => 3,
-        'blue' => 5,
-        'purple' => 2,
-        'orange' => 2,
-        'pink' => 7,
-        'cyan' => 2,
-        'brown' => 2,
-        'magenta' => 9,
-        'lime' => 2
+        'green' => 20,
+        'teal' => 3,
+        'blue' => 8,
+        'violet' => 4,
+        'purple' => 10,
+        'magenta' => 2,
+        'red' => 3,
+        'darkorange' => 5,
+        'orange' => 14,
+        'goldenrod' => 7,
+        'yellow' => 2,
+        'chartreuse' => 2,
     ];
 
     public function startNewGame()
