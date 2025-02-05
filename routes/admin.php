@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\GameSettingsController;
 use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\SpinGameSettingsController;
 use App\Http\Controllers\Admin\UserController;
 
 // Admin Auth Routes
@@ -31,8 +32,8 @@ Route::middleware(['auth:admin'])->group(function () {
     // Game Settings
     Route::get('/games/crash', [GameSettingsController::class, 'crashSettings'])->name('admin.games.crash');
     Route::post('/games/crash', [GameSettingsController::class, 'updateCrashGame'])->name('admin.games.crash.update');
-    Route::get('/games/spin', [GameSettingsController::class, 'spinSettings'])->name('admin.games.spin');
-    Route::post('/games/spin', [GameSettingsController::class, 'updateSpinWheel'])->name('admin.games.spin.update');
+   Route::get('/games/spin', [SpinGameSettingsController::class, 'index'])->name('admin.games.spin');
+    Route::post('/games/spin/update', [SpinGameSettingsController::class, 'updateSettings'])->name('admin.games.spin.update');
 
     // Transactions
     Route::get('/transactions', [TransactionController::class, 'index'])->name('admin.transactions.index');
