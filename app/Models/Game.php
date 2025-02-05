@@ -44,4 +44,11 @@ class Game extends Model
     {
         return $this->bets()->sum('amount');
     }
+
+    public function updateTotalBets()
+{
+    $this->total_bets = $this->bets()->sum('amount');
+    $this->save();
+}
+
 }

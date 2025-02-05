@@ -5,20 +5,34 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use Illuminate\Http\Request;
+use App\Models\Game;
+
 
 class GameSettingsController extends Controller
 {
     public function crashSettings()
-    {
-        $settings = [
-            'min_bet' => Setting::get('crash_min_bet') ?? 100,
-            'max_bet' => Setting::get('crash_max_bet') ?? 10000,
-            'house_edge' => Setting::get('crash_house_edge') ?? 5,
-            'max_multiplier' => Setting::get('crash_max_multiplier') ?? 100
-        ];
+{
+    $settings = [
+        'min_bet' => Setting::get('crash_min_bet') ?? 100,
+        'max_bet' => Setting::get('crash_max_bet') ?? 10000,
+        'house_edge' => Setting::get('crash_house_edge') ?? 5,
+        'max_multiplier' => Setting::get('crash_max_multiplier') ?? 100
+    ];
 
-        return view('admin.games.crash-settings', compact('settings'));
-    }
+    $recentGames = Game::with('bets.user')
+        ->latest()
+        ->take(20)
+        ->get();
+
+    $statistics = [
+        'total_games' => Game::count(),
+        'total_bets' => Game::sum('total_bets'),
+        'average_crash_point' => Game::avg('crash_point'),
+        'highest_crash_point' => Game::max('crash_point'),
+    ];
+
+    return view('admin.games.crash-settings', compact('settings', 'recentGames', 'statistics'));
+}
 
     public function updateCrashGame(Request $request)
     {

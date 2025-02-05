@@ -37,7 +37,8 @@ class BetController extends Controller
                 $request->validated(),
                 auth()->user()
             );
-
+  $game = Game::current();
+        $game->updateTotalBets();
             return response()->json([
                 'success' => true,
                 'bet' => $bet,
