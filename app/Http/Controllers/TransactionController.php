@@ -110,56 +110,85 @@ class TransactionController extends Controller
 
 
 
-    public function initiateWithdrawal(Request $request)
-    {
-        $validated = $request->validate([
-            'amount' => 'required|numeric|min:1',
-            'bank_name' => 'required|string',
-            'account_number' => 'required|string',
-            'account_name' => 'required|string'
-        ]);
+   public function initiateWithdrawal(Request $request)
+{
+    $validated = $request->validate([
+        'amount' => 'required|numeric|min:1',
+        'bank_name' => 'required|string',
+        'account_number' => 'required|string',
+        'account_name' => 'required|string'
+    ]);
 
-        $user = auth()->user();
+    $user = auth()->user();
 
-        // Check total deposits
-        $totalDeposits = Transaction::where('user_id', $user->id)
-            ->where('type', 'Deposit')
-            ->where('status', 'Completed')
-            ->sum('amount');
+    // Check total deposits
+    $totalDeposits = Transaction::where('user_id', $user->id)
+        ->where('type', 'Deposit')
+        ->where('status', 'Completed')
+        ->sum('amount');
 
-        if ($totalDeposits < 1000) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You need to deposit at least ₦1,000 before making withdrawals'
-            ], 400);
-        }
-
-        if ($user->wallet_balance < $validated['amount']) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Insufficient balance'
-            ], 400);
-        }
-
-        $transaction = Transaction::create([
-            'user_id' => $user->id,
-            'reference' => 'WIT' . Str::random(17),
-            'amount' => $validated['amount'],
-            'type' => 'Withdrawal',
-            'bank_name' => $validated['bank_name'],
-            'account_number' => $validated['account_number'],
-            'account_name' => $validated['account_name'],
-            'email' => $user->email,
-            'phone' => $user->phone_number,
-            'ip_address' => $request->ip(),
-            'status' => 'Pending'
-        ]);
-
+    if ($totalDeposits < 1000) {
         return response()->json([
-            'success' => true,
-            'transaction' => $transaction
-        ]);
+            'success' => false,
+            'message' => 'You need to deposit at least ₦1,000 before making withdrawals'
+        ], 400);
     }
+
+    // Check if user has won money before depositing
+    $firstDepositDate = Transaction::where('user_id', $user->id)
+        ->where('type', 'Deposit')
+        ->where('status', 'Completed')
+        ->orderBy('created_at')
+        ->first()?->created_at;
+
+    $wonBeforeDeposit = false;
+    if ($firstDepositDate) {
+        // Check if user won money from games before their first deposit
+        $earlyWinnings = Transaction::where('user_id', $user->id)
+            ->where('type', 'game')
+            ->where('amount', '>', 0)
+            ->where('created_at', '<', $firstDepositDate)
+            ->exists();
+
+        $wonBeforeDeposit = $earlyWinnings;
+    }
+
+    // Calculate fee based on user history
+    $feePercentage = $wonBeforeDeposit ? 0.4 : 0.2; // 40% if won before deposit, 20% otherwise
+    $fee = $validated['amount'] * $feePercentage;
+    $amountAfterFee = $validated['amount'] - $fee;
+
+    if ($user->wallet_balance < $validated['amount']) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Insufficient balance'
+        ], 400);
+    }
+
+    $transaction = Transaction::create([
+        'user_id' => $user->id,
+        'reference' => 'WIT' . Str::random(17),
+        'amount' => $validated['amount'],
+        'fee' => $fee,
+        'amount_after_fee' => $amountAfterFee,
+        'type' => 'Withdrawal',
+        'bank_name' => $validated['bank_name'],
+        'account_number' => $validated['account_number'],
+        'account_name' => $validated['account_name'],
+        'email' => $user->email,
+        'phone' => $user->phone_number,
+        'ip_address' => $request->ip(),
+        'status' => 'Pending'
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'transaction' => $transaction,
+        'fee_percentage' => $feePercentage * 100,
+        'fee' => $fee,
+        'amount_after_fee' => $amountAfterFee
+    ]);
+}
 
 
     public function giveBonus(User $user, $amount)

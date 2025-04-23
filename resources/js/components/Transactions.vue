@@ -46,8 +46,11 @@
             <input type="number" v-model="withdrawAmount" min="1" required>
           </div>
           <div class="fee-info">
-            <p>Fee (20%): ${{ calculateFee }}</p>
+            <p>Fee ({{ feePercentage }}%): ${{ calculateFee }}</p>
             <p>You will receive: ${{ calculateNetAmount }}</p>
+            <p v-if="feePercentage > 20" class="text-red-500 text-sm">
+                Higher fee applies because you won money before making your first deposit.
+            </p>
           </div>
           <div class="form-group">
             <label>Bank Name</label>
@@ -106,16 +109,18 @@ export default {
       accountNumber: '',
       accountName: '',
       transactions: [],
-      userBalance: 0
+      userBalance: 0,
+      feePercentage: 20, // Default fee percentage
+      errorMessage: null
     }
   },
 
   computed: {
     calculateFee() {
-      return this.withdrawAmount ? (this.withdrawAmount * 0.2).toFixed(2) : 0
+      return this.withdrawAmount ? (this.withdrawAmount * this.feePercentage / 100).toFixed(2) : 0
     },
     calculateNetAmount() {
-      return this.withdrawAmount ? (this.withdrawAmount * 0.8).toFixed(2) : 0
+      return this.withdrawAmount ? (this.withdrawAmount - this.calculateFee).toFixed(2) : 0
     }
   },
 
@@ -158,6 +163,8 @@ export default {
         })
 
         if (response.data.success) {
+          // Update fee percentage from server response
+          this.feePercentage = response.data.fee_percentage || 20
           this.loadTransactions()
           this.showWithdrawForm = false
         }
