@@ -24,7 +24,7 @@ class BankAccountController extends Controller
     ]);
 
     $response = Http::withHeaders([
-        'Authorization' => 'Bearer sk_test_2238e369cfdbc08b694630835d0b8a4dfb05178e'
+        'Authorization' => 'Bearer sk_live_f3a6d915714bffd0486e0d11937fb3900bc47b54'
     ])->post('https://api.paystack.co/transferrecipient', [
         'type' => 'nuban',
         'name' => auth()->user()->name,
